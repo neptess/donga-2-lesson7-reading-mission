@@ -221,6 +221,8 @@ function saveKey(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 let S=loadKey("im-student-v2",{profile:null,code:null,val:{},res:{}});
 let T=loadKey("im-teacher-v2",{groups:7,idx:0,code:null,reveal:false,score:{},seen:[]});
 const saveS=()=>saveKey("im-student-v2",S),saveT=()=>saveKey("im-teacher-v2",T);
+/* 반 코드별 선생님 기록 (조정 점수, 띄운 문장, 위치) */
+function rs(){const k=(LIVE&&T.room)?T.room:"_";T.byRoom=T.byRoom||{};return T.byRoom[k]||(T.byRoom[k]={score:{},seen:[]})}
 
 function render(){if(location.hash==="#teacher")return renderTeacher();renderStudent()}
 window.addEventListener("hashchange",render);
@@ -266,8 +268,9 @@ function tpl(s,part,me,r){const locked=!me||(r&&r.done);let i=0;
 function fixHTML(s,me,r){const locked=!me||(r&&r.done);const g=k=>esc(me?S.val[CK+"|"+k]||"":"");
   return `<div class="fixrow">틀린 곳 고치기: <input class="t" id="i-${s.id}-fw" data-key="${s.id}-fw" placeholder="틀린 부분" value="${g(s.id+"-fw")}" ${locked?"disabled":""}> → <input class="t" id="i-${s.id}-fr" data-key="${s.id}-fr" placeholder="고친 것" value="${g(s.id+"-fr")}" ${locked?"disabled":""}></div>`}
 function resultHTML(s,r){
-  if(r&&r.done)return r.ok?`<div class="result ok">✅ ${r.pts}점<small>${r.tries===1?"한 번에 정답!":"두 번째에 정답!"} 화면을 선생님께 보여 주세요.</small></div>`
-    :`<div class="result no">❌ 0점<small>두 번 모두 틀렸어요. 선생님의 정답 공개를 기다려요.</small></div>`;
+  const g=S.profile.grp;
+  if(r&&r.done)return r.ok?`<div class="result ok"><small style="font-size:1.6rem;margin:0 0 6px">${g}모둠</small>✅ +${r.pts}<small>${r.tries===1?"한 번에 정답!":"두 번째에 정답!"} ${LIVE?"선생님 화면에 반영됐어요.":"화면을 들어 선생님께 보여 주세요."}</small></div>`
+    :`<div class="result no"><small style="font-size:1.6rem;margin:0 0 6px">${g}모둠</small>❌ 0점<small>두 번 모두 틀렸어요. 선생님의 정답 공개를 기다려요.</small></div>`;
   return `<div class="row"><button class="btn" id="submit">${r&&r.tries===1?"다시 제출 (마지막 기회, 1점)":"제출하기"}</button>${r&&r.tries===1?'<span class="note" style="color:var(--bad)">틀린 곳이 있어요. 모둠과 다시 상의하세요.</span>':'<span class="note">한 번에 맞히면 2점, 두 번째에 맞히면 1점</span>'}</div>`}
 function bindStudent(){
   const ci=$("#code");if(ci){const go=()=>{const c=ci.value.replace(/\D/g,"");if(c.length!==3){toast("숫자 3자리를 입력하세요");return}S.code=c;saveS();render()};
@@ -336,7 +339,7 @@ function renderTeacher(){$("#app").className="wrap wide";
   let en=slotHTML(s,"en",T.reveal);if(s.fix&&T.reveal){const w=esc(s.fix.w[0]);en=en.replace(w,`<s>${w}</s> <mark>${esc(s.fix.r[0])}</mark>`)}
   const groups=Array.from({length:T.groups},(_,i)=>i+1);
   const auto={};if(LIVE)Object.values(tSubs).forEach(byG=>{for(const k in byG){const g=k.replace(/^g/,"");auto[g]=(auto[g]||0)+(+byG[k].pts||0)}});
-  const total=g=>Math.max(0,(auto[g]||0)+(T.score[g]||0));const max=Math.max(1,...groups.map(total));
+  const total=g=>Math.max(0,(auto[g]||0)+(rs().score[g]||0));const max=Math.max(1,...groups.map(total));
   const now=(LIVE&&tSubs[T.code])||{};
   const joined=g=>Object.values(tMembers).filter(m=>+m.grp===g).length;
   const status=g=>{const r=now["g"+g];if(!r)return `<span class="note">제출 전</span>`;if(r.done&&r.ok)return `<span style="color:var(--ok);font-weight:700">✅ +${r.pts}</span>`;if(r.done)return `<span style="color:var(--bad);font-weight:700">❌</span>`;return `<span style="color:var(--gold);font-weight:700">재도전</span>`};
@@ -360,7 +363,7 @@ function renderTeacher(){$("#app").className="wrap wide";
       ${T.reveal&&s.tip?`<div class="hint">${esc(s.tip)}</div>`:""}
       <div class="row"><button class="btn" id="t-rev">${T.reveal?"정답 숨기기":"정답 공개"}</button><button class="btn ghost small" id="t-new">${LIVE?"입력 담당 다시 뽑기":"코드 새로 만들기"}</button></div>
     </div>
-    <div class="panel"><div class="nav">${STAGES.map(sg=>`<span class="sep">${sg.n}단계 ${esc(sg.title)}</span>`+ITEMS.map((it,i)=>it.stage===sg?`<button data-go="${i}" class="${i===T.idx?"cur":""} ${T.seen.includes(i)?"seen":""}">${it.id}</button>`:"").join("")).join("")}</div></div>
+    <div class="panel"><div class="nav">${STAGES.map(sg=>`<span class="sep">${sg.n}단계 ${esc(sg.title)}</span>`+ITEMS.map((it,i)=>it.stage===sg?`<button data-go="${i}" class="${i===T.idx?"cur":""} ${rs().seen.includes(i)?"seen":""}">${it.id}</button>`:"").join("")).join("")}</div></div>
    </div>
    <div class="stack">
     <div class="panel stack"><h3>모둠 점수</h3>
@@ -375,18 +378,22 @@ function renderTeacher(){$("#app").className="wrap wide";
       :"진행: 문장 띄우기 → 코드 입력 → 모둠 토의 → 담당 학생 제출 → ✅ 화면 들어 보이기 → 정답 공개 → 점수 주기 (한 번에 정답 +2, 두 번째 정답 +1)"}</div>
    </div>
   </div>`;
-  const go=i=>{T.idx=i;T.code=LIVE?rid():newCode(i);T.reveal=false;if(!T.seen.includes(i))T.seen.push(i);saveT();pushState();render();scrollTo(0,0)};
+  const go=i=>{T.idx=i;T.code=LIVE?rid():newCode(i);T.reveal=false;if(!rs().seen.includes(i))rs().seen.push(i);saveT();pushState();render();scrollTo(0,0)};
   $("#t-prev").onclick=()=>go(T.idx-1);$("#t-next").onclick=()=>go(T.idx+1);
   document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(+b.dataset.go));
   $("#t-rev").onclick=()=>{T.reveal=!T.reveal;saveT();pushState();render()};
   $("#t-new").onclick=()=>{T.code=LIVE?rid():newCode(T.idx);saveT();pushState();render();toast(LIVE?"입력 담당을 다시 뽑았어요":"새 코드를 만들었어요. 입력 담당도 바뀝니다")};
   $("#t-g").onchange=e=>{T.groups=+e.target.value;saveT();render()};
-  const rg=$("#t-room-go");if(rg)rg.onclick=()=>{const r=$("#t-room").value.trim().toLowerCase();if(!roomOk(r)){toast("반 코드는 영어 소문자, 숫자, - 로 20자 이내");return}T.room=r;saveT();render();toast(`반 코드 ${r} 적용`)};
-  document.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>{const g=b.dataset.sc;T.score[g]=(T.score[g]||0)+ +b.dataset.d;saveT();render()});
+  const rg=$("#t-room-go");if(rg)rg.onclick=async()=>{const r=$("#t-room").value.trim().toLowerCase();if(!roomOk(r)){toast("반 코드는 영어 소문자, 숫자, - 로 20자 이내");return}
+    if(r===T.room){render();return}
+    let st=null;try{const res=await fetch(`${FB}/rooms/${r}/state.json`);st=await res.json()}catch(e){}
+    T.room=r;if(st&&st.idx!=null&&st.seed){T.idx=st.idx;T.code=st.seed;T.reveal=!!st.reveal}else{T.idx=0;T.code=rid();T.reveal=false}
+    if(!rs().seen.includes(T.idx))rs().seen.push(T.idx);saveT();render();toast(st&&st.seed?`${r}: ${label(ITEMS[T.idx])}부터 이어서 진행`:`반 코드 ${r} 새로 시작`)};
+  document.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>{const g=b.dataset.sc;rs().score[g]=(rs().score[g]||0)+ +b.dataset.d;saveT();render()});
   $("#t-reset").onclick=()=>{$("#t-rs").innerHTML=`<span class="confirm">${LIVE?"이 반의 제출 기록과 점수를 모두 지울까요?":"모든 모둠 점수를 0으로?"} <button class="btn small" id="ry">지우기</button><button class="btn ghost small" id="rn">취소</button></span>`;
-    $("#ry").onclick=async()=>{T.score={};T.seen=[T.idx];saveT();if(LIVE&&T.room){await fdel(`rooms/${T.room}/subs`);pushState()}render()};$("#rn").onclick=render};
+    $("#ry").onclick=async()=>{rs().score={};rs().seen=[T.idx];saveT();if(LIVE&&T.room){await fdel(`rooms/${T.room}/subs`);pushState()}render()};$("#rn").onclick=render};
 }
-if(!T.seen.includes(T.idx))T.seen.push(T.idx);
+if(!rs().seen.includes(T.idx))rs().seen.push(T.idx);
 startStudentLive();
 render();
 </script>
