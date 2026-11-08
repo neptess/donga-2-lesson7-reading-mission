@@ -128,8 +128,14 @@ mark{background:var(--hl);color:var(--ink);padding:0 3px;border-radius:4px;font-
 .conn{border-radius:10px;padding:8px 12px;background:var(--hl);font-size:.9rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .conn.bad{background:var(--badbg);color:var(--bad)}
 input.code4{font-family:var(--f-en);font-size:1.8rem;letter-spacing:.35em;text-align:center;max-width:8ch}
-.qrmini{border:0;padding:4px;background:#fff;border-radius:8px;line-height:0;width:76px;height:76px;flex:none}
-.qrmini svg{width:100%;height:100%}
+/* 교사 화면 오른쪽 위에 늘 떠 있는 입장 QR·코드 (튕긴 학생이 언제든 다시 들어오게) */
+.dock{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));z-index:25;width:168px;background:#fff;color:#1d2321;border:3px solid var(--stage);border-radius:16px;padding:8px 8px 6px;display:flex;flex-direction:column;align-items:center;gap:0;box-shadow:0 6px 18px rgba(0,0,0,.18);font:inherit;cursor:pointer;line-height:1.25}
+.dock svg{width:146px;height:146px;display:block}
+.dock .dl{font-size:.75rem;color:#5f6a66}
+.dock b{font-family:var(--f-en);font-size:2.1rem;letter-spacing:.14em;font-variant-numeric:tabular-nums}
+.dock .dn{font-size:.75rem;color:#5f6a66}
+.wrap.wide.docked{padding-right:192px}
+@media (max-width:700px){.dock{width:108px;padding:5px}.dock svg{width:92px;height:92px}.dock b{font-size:1.3rem}.wrap.wide.docked{padding-right:126px}}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
 .qrbig{background:#fff;color:#1d2321;border-radius:18px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:10px;max-width:92vw}
 .qrbig svg{width:min(70vh,80vw);height:auto}
@@ -538,7 +544,7 @@ function qrSVG(text,cell){if(typeof qrcode!=="function")return "";try{const q=qr
 
 /* ================== 선생님 화면 (#teacher) ================== */
 let qrBig=false;
-function renderTeacher(){$("#app").className="wrap wide";const cname=rs().name||"";
+function renderTeacher(){$("#app").className="wrap wide docked";const cname=rs().name||"";
   if(!T.code){T.code=seedOf(T.page);saveT()}
   const pg=PAGES[T.page],s=first(T.page),talk=isTalk(s);setStage(s);
   const groups=Array.from({length:T.groups},(_,i)=>i+1);const on=onlineKeys();const R=rs();
@@ -555,12 +561,11 @@ function renderTeacher(){$("#app").className="wrap wide";const cname=rs().name||
   const doneAll=groups.reduce((a,g)=>a+subsOf(g).filter(x=>x.done).length,0),onAll=on.size;
   const url=T.room?joinURL(T.room):"";const fileMode=location.protocol==="file:";
   const navBtns=`<button class="btn small" id="t-prev" ${T.page===0?"disabled":""}>← 이전</button><button class="btn small" id="t-next" ${T.page===NP-1?"disabled":""}>다음 →</button>`;
-  const connLine=!HAS_PEER?"연결 도구를 불러오지 못했어요 (인터넷 확인 후 새로고침)":hOk?`입장 코드 · ● 열림 · ${onAll}명 접속`:(hErr||"방을 여는 중…");
-  const top=`<div class="bigcode"><div class="row" style="gap:14px"><button type="button" class="qrmini" id="t-qr" aria-label="QR 크게 보기">${qrSVG(url,3)}</button>
-      <div><div style="font-size:.85rem;opacity:.9">${cname?esc(cname)+" · ":""}${esc(connLine)}</div><b>${esc(T.room||"—")}</b></div></div>
+  const connLine=!HAS_PEER?"연결 도구를 불러오지 못했어요 (인터넷 확인 후 새로고침)":hOk?`● 방 열림 · ${onAll}명 접속`:(hErr||"방을 여는 중…");
+  const top=`<div class="bigcode"><div><div style="font-size:.85rem;opacity:.9">${esc(connLine)}</div><b style="letter-spacing:.04em;font-family:var(--f-display);font-weight:400">${cname?esc(cname):"이름 없는 반"}</b></div>
       <div class="row">${pg.see?`<span>👀 확인 문장</span>`:`<span>${doneAll}/${onAll}명 완료</span>`}${navBtns}</div></div>
       ${hTry>10?`<div class="conn bad">${esc(hErr)} <button class="btn small" id="t-move">이 반 입장 코드 바꾸기</button></div>`:""}
-      ${fileMode?`<div class="conn">지금은 컴퓨터 안의 파일로 열려 있어서 학생들이 QR로 들어올 수 없어요. 인터넷 주소(예: Vercel)로 열어 주세요.</div>`:""}`;
+      ${fileMode?`<div class="conn">지금은 컴퓨터 안의 파일로 열려 있어서 학생들이 QR로 들어올 수 없어요. 인터넷 주소(GitHub 주소)로 열어 주세요.</div>`:""}`;
   let main;
   if(pg.see){
     main=`<div class="note">👀 확인 문장 · 빈칸을 누르면 그 칸만 열려요 (학생 화면에도 같이 열려요).</div>
@@ -610,6 +615,7 @@ function renderTeacher(){$("#app").className="wrap wide";const cname=rs().name||
     <div class="panel note">학생 화면은 선생님이 <b>다음 →</b>을 눌러야 함께 넘어가요. <b>수업 중에는 이 화면을 닫지 마세요</b> (새로고침은 괜찮아요).<br>📝 문제: 각자 상·중·하로 풀기 → 완료 인원 확인 → 정답 공개 (🎤 문장은 모둠별 설명자가 자동으로 뽑혀요) → 모둠 안 설명 → 해설 보기<br>👀 확인: 빈칸을 눌러 하나씩 열거나 전체 공개 → 학습지 빨간 펜 수정<br>점수: 상 3·2점, 중 2·1점, 하 1·1점 (한 번에·두 번째)</div>
    </div>
   </div>
+  <button type="button" class="dock" id="t-qr" aria-label="입장 QR 크게 보기"><span class="dl">QR로 입장 · 누르면 크게</span>${qrSVG(url,3)}<span class="dl">입장 코드</span><b>${esc(T.room||"—")}</b><span class="dn">${hOk?`● ${onAll}명 접속`:"방을 여는 중…"}</span></button>
   ${qrBig?`<div class="overlay" id="t-ov"><div class="qrbig">${qrSVG(url,10)}<b>${esc(T.room||"")}</b><span>${esc(url)}</span><button class="btn" id="t-ovx">닫기</button></div></div>`:""}`;
   const go=i=>{T.page=i;T.code=seedOf(i);T.reveal=false;T.open={};T.tip=false;T.pick=null;if(!rs().seen.includes(i))rs().seen.push(i);saveT();pushState();render();scrollTo(0,0)};
   $("#t-prev").onclick=()=>go(T.page-1);$("#t-next").onclick=()=>go(T.page+1);
