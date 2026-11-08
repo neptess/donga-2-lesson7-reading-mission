@@ -583,7 +583,7 @@ function renderTeacher(){$("#app").className="wrap wide";
        <span class="bs" style="grid-column:1/-1"><span class="note" style="margin-right:auto">보너스</span><button data-sc="${g}" data-d="1">+1</button><button data-sc="${g}" data-d="-1" aria-label="${g}모둠 1점 빼기">−1</button></span>
        <span class="bar" style="grid-column:1/-1"><i style="width:${v/max*100}%"></i></span></div>`}).join("")}</div>
      <button class="btn ghost small" id="t-quota" aria-pressed="${!!T.quota}">모둠 안 수준 나누기: ${T.quota?"켜짐":"꺼짐"}</button>
-     <span class="note">${T.quota?"3명 상1·중1·하1 / 4명 상1·중2·하1 / 5명 상1·중2·하2 (지금 접속한 인원 기준)":"꺼짐: 학생마다 자유롭게 수준 선택"}</span>
+     <span class="note">${T.quota?"3명 상1·중1·하1 / 4명 상1·중2·하1 / 5명 상1·중2·하2 (지금 접속한 인원 기준)":"꺼짐: 자리 수 제한 없이 각자 상·중·하 중 하나를 골라요"}</span>
      <span id="t-rs"><button class="btn ghost small" id="t-reset">새 수업 시작 (기록·점수 지우기)</button></span>
      <span id="t-nr"><button class="btn ghost small" id="t-newroom">새 입장 코드 (다른 반)</button></span>
     </div>
