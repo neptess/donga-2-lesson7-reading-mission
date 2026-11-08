@@ -292,6 +292,7 @@ function slotHTML(s,part,mode){mode=mode||{};let i=0;
   return parse(s[part]).map(seg=>{if(!seg.k)return esc(seg.t);const key=`${s.id}-${part}-${i++}`;
     const open=mode.reveal||(mode.open&&mode.open[key]);let o;
     if(open)o=`<mark>${esc(seg.ans[0])}</mark>`;
+    else if(seg.k==="ch"&&mode.hideCh)o=`<span class="slot">&nbsp;</span>`;  /* 문제 문장 영어 줄: 상 수준 힌트가 되지 않게 보기 숨김 */
     else if(seg.k==="ch")o=`<span class="slot c">( ${seg.opts.map(esc).join(" / ")} )</span>`;
     else if(seg.k==="fm")o=`<span class="slot">(${esc(seg.base)})</span>`;
     else o=`<span class="slot">&nbsp;</span>`;
@@ -357,7 +358,7 @@ function quizStudent(s,cur){const r=S.res[CK],lv=S.lv[CK],done=!!(r&&r.done);
   const lvLock=!!(r&&r.tries);
   const seat=seatsLeft(cur);
   const pick=`<div class="lvpick" role="group" aria-label="수준 고르기">${[3,2,1].map(n=>{const left=seat?seat[n]:null,full=left!=null&&left<=0&&lv!==n;return `<button type="button" data-lv="${n}" class="${lv===n?"sel":""}" ${lvLock||full?"disabled":""} aria-pressed="${lv===n}"><b>${LV[n].n}</b><span>${LV[n].d} · ${PTS[n][0]}점</span><span>${lv===n?"내 수준":left==null?"":full?"마감":`${left}자리 남음`}</span></button>`}).join("")}</div>`;
-  if(!lv)return `<div class="card">${no}<div class="role other">이 문장에 도전할 수준을 먼저 고르세요. 모둠 안에서 수준마다 자리 수가 정해져 있어요. 첫 제출 뒤에는 바꿀 수 없어요.</div>${pick}<div class="en">${slotHTML(s,"en",{})}</div></div>`;
+  if(!lv)return `<div class="card">${no}<div class="role other">이 문장에 도전할 수준을 먼저 고르세요. 모둠 안에서 수준마다 자리 수가 정해져 있어요. 첫 제출 뒤에는 바꿀 수 없어요.</div>${pick}<div class="en">${slotHTML(s,"en",{hideCh:true})}</div></div>`;
   return `<div class="card">${no}${pick}
     <div class="en">${qTpl(s,"en",lv,done)}</div>
     ${s.fix?fixHTML(s,lv,done):""}
@@ -549,7 +550,7 @@ function renderTeacher(){$("#app").className="wrap wide";
       ${pg.items.map(i=>seeCard(ITEMS[i],{reveal:T.reveal,open:T.open,click:!T.reveal})).join("")}
       <div class="row"><button class="btn" id="t-rev">${T.reveal?"모두 숨기기":"전체 공개"}</button>${Object.keys(T.open).length&&!T.reveal?'<button class="btn ghost small" id="t-close">연 칸 모두 닫기</button>':""}</div>`}
   else{
-    let en=slotHTML(s,"en",{reveal:T.reveal});if(s.fix&&T.reveal)en=fixReveal(en,s);
+    let en=slotHTML(s,"en",{reveal:T.reveal,hideCh:true});if(s.fix&&T.reveal)en=fixReveal(en,s);
     const tipOn=T.reveal&&s.tip&&(T.tip||!talk);
     const tb=R.talkBy[T.page]||{};
     const talkPanel=T.reveal&&talk?`<div class="panel stack"><h3>🎤 모둠별 설명 담당</h3>
