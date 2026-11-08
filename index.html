@@ -276,7 +276,9 @@ let T=loadKey("irm-teacher-v1",{quota:true,groups:7,page:0,code:null,reveal:fals
 S.val=S.val||{};S.res=S.res||{};S.lv=S.lv||{};
 T.open=T.open||{};if(T.quota==null)T.quota=true;T.talkX=T.talkX||{};if(!(T.page>=0&&T.page<NP))T.page=0;
 const saveS=()=>saveKey(SKEY,S);
-let tSave=null;const saveT=()=>{clearTimeout(tSave);tSave=setTimeout(()=>saveKey("irm-teacher-v1",T),200)};
+/* 지금 반의 진행 위치를 그 반 기록에 같이 저장 (반을 바꿨다가 돌아와도 이어서) */
+function stash(){if(!T.room)return;const r=rs();r.page=T.page;r.reveal=!!T.reveal;r.open=T.open||{};r.tip=!!T.tip;r.pick=T.pick||null;r.groups=T.groups;r.used=Date.now()}
+let tSave=null;const saveT=()=>{stash();clearTimeout(tSave);tSave=setTimeout(()=>saveKey("irm-teacher-v1",T),200)};
 addEventListener("pagehide",()=>{if(location.hash==="#teacher")saveKey("irm-teacher-v1",T)});
 /* 입장 코드별 선생님 기록 (모둠원, 제출, 보너스 점수, 화면별 코드, 설명자 기록) */
 function rs(){const k=T.room||"_";T.byRoom=T.byRoom||{};const r=T.byRoom[k]||(T.byRoom[k]={});
@@ -307,7 +309,7 @@ function sSend(m){if(sConn&&sConn.open)try{sConn.send(m)}catch(e){}}
 function studentConnect(){clearTimeout(sTimer);if(sPeer){try{sPeer.destroy()}catch(e){}}sPeer=null;sConn=null;sOk=false;
   const p=S.profile;if(!p||!roomOk(p.room||"")||!HAS_PEER)return;
   const peer=new Peer();sPeer=peer;const live=()=>sPeer===peer;
-  const to=setTimeout(()=>{if(live()&&!sOk){sWhy=sEver?"":"선생님 방을 찾지 못했어요. 입장 코드를 확인하거나, 선생님 화면이 열려 있는지 확인해 주세요.";sLost()}},12000);
+  const to=setTimeout(()=>{if(live()&&!sOk){sWhy=sEver?"":"선생님 방을 찾지 못했어요. 선생님 화면이 열려 있는지 확인해 주세요. 입장 코드가 바뀌었다면 위의 '정보 바꾸기'를 눌러 다시 입력하세요.";sLost()}},12000);
   peer.on("open",()=>{if(!live())return;const c=peer.connect(PREFIX+p.room,{reliable:true});sConn=c;
     c.on("open",()=>{if(live())c.send({t:"join",grp:p.grp,num:p.num,name:p.name||""})});
     c.on("data",d=>{if(!live()||!d)return;sLast=Date.now();
@@ -316,7 +318,7 @@ function studentConnect(){clearTimeout(sTimer);if(sPeer){try{sPeer.destroy()}cat
       else if(d.t==="err"){clearTimeout(to);sWhy=d.msg;try{peer.destroy()}catch(e){}sPeer=null;S.profile=null;saveS();render()}});
     c.on("close",()=>{if(live())sLost()});c.on("error",()=>{if(live())sLost()})});
   peer.on("error",e=>{if(!live())return;clearTimeout(to);
-    if(e&&e.type==="peer-unavailable"&&!sEver)sWhy="선생님 방을 찾지 못했어요. 입장 코드를 확인하거나, 선생님 화면이 열려 있는지 확인해 주세요.";sLost()});
+    if(e&&e.type==="peer-unavailable"&&!sEver)sWhy="선생님 방을 찾지 못했어요. 선생님 화면이 열려 있는지 확인해 주세요. 입장 코드가 바뀌었다면 위의 '정보 바꾸기'를 눌러 다시 입력하세요.";sLost()});
 }
 function sLost(){if(sPeer){try{sPeer.destroy()}catch(e){}}sPeer=null;sConn=null;sOk=false;sRetry++;renderSoon();clearTimeout(sTimer);sTimer=setTimeout(studentConnect,Math.min(10000,1500*sRetry))}
 /* 몇 초마다 신호를 보내고, 선생님 화면의 대답이 끊기면 다시 연결 */
@@ -466,7 +468,7 @@ function renderSetup(){document.documentElement.style.setProperty("--stage","var
 /* ================== 선생님: 방 열기 (이 화면이 서버 역할) ================== */
 let hPeer=null,hOk=false,hErr="",hTry=0,hTimer=null;const hConns=new Set();
 const seedOf=pg=>{const r=rs();return r.seeds[pg]||(r.seeds[pg]=rid())};
-function hostOpen(){if(hPeer||!HAS_PEER)return;clearTimeout(hTimer);if(!T.room){T.room=newRoom();saveT()}
+function hostOpen(){if(hPeer||!HAS_PEER)return;clearTimeout(hTimer);if(!T.room){T.room=freeCode();saveT()}
   const code=T.room;const peer=new Peer(PREFIX+code);hPeer=peer;
   peer.on("open",()=>{if(hPeer!==peer)return;hOk=true;hErr="";hTry=0;rs().opened=1;saveT();renderSoon()});
   peer.on("connection",conn=>{conn.on("data",d=>onHostData(conn,d));const drop=()=>{hConns.delete(conn);pushSoon();renderSoon()};conn.on("close",drop);conn.on("error",drop)});
@@ -474,12 +476,19 @@ function hostOpen(){if(hPeer||!HAS_PEER)return;clearTimeout(hTimer);if(!T.room){
   peer.on("close",()=>{if(hPeer!==peer)return;hPeer=null;hOk=false;renderSoon();hTimer=setTimeout(hostOpen,3000)});
   peer.on("error",e=>{if(hPeer!==peer)return;const t=e&&e.type;
     if(t==="unavailable-id"){try{peer.destroy()}catch(x){}hPeer=null;hOk=false;
-      if(!rs().opened){T.room=newRoom();saveT();hostOpen();return}           /* 처음 여는 코드가 이미 쓰이는 중 → 다른 코드로 */
-      hTry++;hErr=hTry<=10?"방을 다시 여는 중… (새로고침 직후에는 몇 초 걸려요)":"이 입장 코드를 다시 열지 못했어요. 다른 창에서 선생님 화면이 열려 있지 않은지 확인하거나, '새 입장 코드'를 눌러 주세요.";
+      if(!rs().opened){moveCode();saveT();hostOpen();return}           /* 처음 여는 코드가 이미 쓰이는 중 → 다른 코드로 */
+      hTry++;hErr=hTry<=10?"방을 다시 여는 중… (새로고침 직후에는 몇 초 걸려요)":"이 입장 코드를 다시 열지 못했어요. 다른 창에서 선생님 화면이 열려 있지 않은지 확인하거나, 아래 '이 반 입장 코드 바꾸기'를 눌러 주세요.";
       if(hTry<=10)hTimer=setTimeout(hostOpen,3000);renderSoon();return}
     if(t==="browser-incompatible"){hErr="이 브라우저에서는 연결 기능을 쓸 수 없어요. 크롬이나 엣지로 열어 주세요.";renderSoon();return}
     if(peer.destroyed){hPeer=null;hOk=false;hErr="연결 서버에 다시 접속하는 중…";renderSoon();hTimer=setTimeout(hostOpen,3000)}});
 }
+/* ---- 반 관리: 반마다 입장 코드·진행 위치·점수를 따로 저장 ---- */
+function freeCode(){let c;do{c=newRoom()}while(T.byRoom&&T.byRoom[c]);return c}
+const classList=()=>Object.entries(T.byRoom||{}).filter(([k])=>roomOk(k)).sort((a,b)=>String(a[1].name||"~").localeCompare(String(b[1].name||"~"),"ko",{numeric:true}));
+function loadClass(code){T.room=code;const r=rs();T.page=r.page>=0&&r.page<NP?r.page:0;T.reveal=!!r.reveal;T.open=r.open||{};T.tip=!!r.tip;T.pick=r.pick||null;if(r.groups)T.groups=r.groups;T.code=seedOf(T.page);if(!r.seen.includes(T.page))r.seen.push(T.page)}
+function switchClass(code){stash();hostClose();loadClass(code);hErr="";hTry=0;qrBig=false;saveT();hostOpen();render();scrollTo(0,0)}
+/* 지금 반의 입장 코드만 새로 바꾸기 (기록은 그대로) */
+function moveCode(){const old=T.room,nk=freeCode();T.byRoom[nk]=T.byRoom[old]||{};delete T.byRoom[old];T.room=nk;if(rs().opened)delete rs().opened}
 function hostClose(){clearTimeout(hTimer);hConns.forEach(c=>{try{c.close()}catch(e){}});hConns.clear();if(hPeer){const p=hPeer;hPeer=null;try{p.destroy()}catch(e){}}hOk=false}
 function stateObj(){const s=first(T.page),quiz=!PAGES[T.page].see;
   const caps={};if(quiz&&T.quota)for(let g=1;g<=8;g++)caps["g"+g]=capsOf(g);
@@ -525,7 +534,7 @@ function qrSVG(text,cell){if(typeof qrcode!=="function")return "";try{const q=qr
 
 /* ================== 선생님 화면 (#teacher) ================== */
 let qrBig=false;
-function renderTeacher(){$("#app").className="wrap wide";
+function renderTeacher(){$("#app").className="wrap wide";const cname=rs().name||"";
   if(!T.code){T.code=seedOf(T.page);saveT()}
   const pg=PAGES[T.page],s=first(T.page),talk=isTalk(s);setStage(s);
   const groups=Array.from({length:T.groups},(_,i)=>i+1);const on=onlineKeys();const R=rs();
@@ -544,8 +553,9 @@ function renderTeacher(){$("#app").className="wrap wide";
   const navBtns=`<button class="btn small" id="t-prev" ${T.page===0?"disabled":""}>← 이전</button><button class="btn small" id="t-next" ${T.page===NP-1?"disabled":""}>다음 →</button>`;
   const connLine=!HAS_PEER?"연결 도구를 불러오지 못했어요 (인터넷 확인 후 새로고침)":hOk?`입장 코드 · ● 열림 · ${onAll}명 접속`:(hErr||"방을 여는 중…");
   const top=`<div class="bigcode"><div class="row" style="gap:14px"><button type="button" class="qrmini" id="t-qr" aria-label="QR 크게 보기">${qrSVG(url,3)}</button>
-      <div><div style="font-size:.85rem;opacity:.9">${esc(connLine)}</div><b>${esc(T.room||"—")}</b></div></div>
+      <div><div style="font-size:.85rem;opacity:.9">${cname?esc(cname)+" · ":""}${esc(connLine)}</div><b>${esc(T.room||"—")}</b></div></div>
       <div class="row">${pg.see?`<span>👀 확인 문장</span>`:`<span>${doneAll}/${onAll}명 완료</span>`}${navBtns}</div></div>
+      ${hTry>10?`<div class="conn bad">${esc(hErr)} <button class="btn small" id="t-move">이 반 입장 코드 바꾸기</button></div>`:""}
       ${fileMode?`<div class="conn">지금은 컴퓨터 안의 파일로 열려 있어서 학생들이 QR로 들어올 수 없어요. 인터넷 주소(예: Vercel)로 열어 주세요.</div>`:""}`;
   let main;
   if(pg.see){
@@ -572,7 +582,10 @@ function renderTeacher(){$("#app").className="wrap wide";
       const lab=p.see&&p.items.length>1?`${f.id}–${l.id}`:`${f.id}`;
       return `<button data-go="${i}" class="${i===T.page?"cur":""} ${R.seen.includes(i)?"seen":""} ${p.see?"see":""} ${!p.see&&isTalk(f)?"talk":""}" aria-label="${p.see?"확인 문장":"문제 문장"} ${lab}">${lab}</button>`}).join("")).join("");
   $("#app").innerHTML=`<div class="top"><h1>관용구 리딩 미션 · 선생님 화면</h1>
-   <div class="row"><label class="f" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:6px">모둠 수 <select id="t-g" style="width:auto">${[4,5,6,7,8].map(n=>`<option ${n===T.groups?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
+   <div class="row"><label class="f" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:6px">반 <select id="t-cls" style="width:auto">${classList().map(([k,r])=>`<option value="${k}" ${k===T.room?"selected":""}>${esc(r.name||"이름 없는 반")} · ${k}</option>`).join("")}</select></label>
+   <span id="t-cl" class="row" style="gap:6px"><button class="btn ghost small" id="t-rename">반 이름 바꾸기</button><button class="btn small" id="t-addcls">＋ 새 반</button></span>
+   <label class="f" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:6px">모둠 수 <select id="t-g" style="width:auto">${[4,5,6,7,8].map(n=>`<option ${n===T.groups?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
+  ${cname?"":`<div class="conn" style="margin-bottom:14px">이 반의 이름을 정해 주세요. 반마다 입장 코드·진행 위치·점수가 따로 저장돼요. <input class="t" id="t-name1" maxlength="12" placeholder="예: 3-1" style="width:8em"><button class="btn small" id="t-name1go">저장</button></div>`}
   <div class="tgrid">
    <div class="stack proj">
     ${top}
@@ -589,7 +602,6 @@ function renderTeacher(){$("#app").className="wrap wide";
      <button class="btn ghost small" id="t-quota" aria-pressed="${!!T.quota}">모둠 안 수준 나누기: ${T.quota?"켜짐":"꺼짐"}</button>
      <span class="note">${T.quota?"3명 상1·중1·하1 / 4명 상1·중2·하1 / 5명 상1·중2·하2 (지금 접속한 인원 기준)":"꺼짐: 자리 수 제한 없이 각자 상·중·하 중 하나를 골라요"}</span>
      <span id="t-rs"><button class="btn ghost small" id="t-reset">새 수업 시작 (기록·점수 지우기)</button></span>
-     <span id="t-nr"><button class="btn ghost small" id="t-newroom">새 입장 코드 (다른 반)</button></span>
     </div>
     <div class="panel note">학생 화면은 선생님이 <b>다음 →</b>을 눌러야 함께 넘어가요. <b>수업 중에는 이 화면을 닫지 마세요</b> (새로고침은 괜찮아요).<br>📝 문제: 각자 상·중·하로 풀기 → 완료 인원 확인 → 정답 공개 (🎤 문장은 모둠별 설명자가 자동으로 뽑혀요) → 모둠 안 설명 → 해설 보기<br>👀 확인: 빈칸을 눌러 하나씩 열거나 전체 공개 → 학습지 빨간 펜 수정<br>점수: 상 3·2점, 중 2·1점, 하 1·1점 (한 번에·두 번째)</div>
    </div>
@@ -615,12 +627,20 @@ function renderTeacher(){$("#app").className="wrap wide";
     $("#ry").onclick=()=>{const r=rs();r.score={};r.seen=[T.page];r.seeds={};r.said={};r.talkBy={};r.subs={};r.members={};r.claims={};
       hConns.forEach(c=>{if(c.open&&c._k)r.members[c._k]={grp:c._g,num:c._n,name:c._nm}}); /* 지금 접속한 학생은 그대로 */
       T.reveal=false;T.open={};T.tip=false;T.pick=null;T.code=seedOf(T.page);saveT();pushState();render()};$("#rn").onclick=render};
-  $("#t-newroom").onclick=()=>{$("#t-nr").innerHTML=`<span class="confirm">새 코드로 바꾸면 지금 학생들은 새 코드로 다시 들어와야 해요. 바꿀까요? <button class="btn small" id="ny">바꾸기</button><button class="btn ghost small" id="nn">취소</button></span>`;
-    $("#ny").onclick=()=>{hostClose();T.room=newRoom();T.page=0;T.reveal=false;T.open={};T.tip=false;T.pick=null;T.code=seedOf(0);if(!rs().seen.includes(0))rs().seen.push(0);saveT();hErr="";hTry=0;hostOpen();render()};$("#nn").onclick=render};
+  /* 반 관리 */
+  $("#t-cls").onchange=e=>switchClass(e.target.value);
+  const setName=v=>{v=String(v||"").trim().slice(0,12);if(!v){toast("반 이름을 입력하세요");return false}rs().name=v;saveT();render();return true};
+  const n1=$("#t-name1go");if(n1){n1.onclick=()=>setName($("#t-name1").value);$("#t-name1").onkeydown=e=>{if(e.key==="Enter")setName(e.target.value)}}
+  $("#t-rename").onclick=()=>{$("#t-cl").innerHTML=`<input class="t" id="t-nm" maxlength="12" value="${esc(cname)}" placeholder="예: 3-1" style="width:8em"><button class="btn small" id="t-nmok">저장</button><button class="btn ghost small" id="t-nmx">취소</button>`;
+    $("#t-nmok").onclick=()=>setName($("#t-nm").value);$("#t-nm").onkeydown=e=>{if(e.key==="Enter")setName(e.target.value)};$("#t-nmx").onclick=render};
+  $("#t-addcls").onclick=()=>{$("#t-cl").innerHTML=`<input class="t" id="t-nc" maxlength="12" placeholder="새 반 이름 (예: 3-2)" style="width:11em"><button class="btn small" id="t-ncok">만들기</button><button class="btn ghost small" id="t-ncx">취소</button>`;
+    const make=()=>{const v=$("#t-nc").value.trim().slice(0,12);if(!v){toast("반 이름을 입력하세요");return}stash();const c=freeCode();T.byRoom[c]={name:v};switchClass(c);toast(`${v} 반을 만들었어요. 입장 코드 ${c}`)};
+    $("#t-ncok").onclick=make;$("#t-nc").onkeydown=e=>{if(e.key==="Enter")make()};$("#t-ncx").onclick=render;$("#t-nc").focus()};
+  const mv=$("#t-move");if(mv)mv.onclick=()=>{hostClose();moveCode();hErr="";hTry=0;saveT();hostOpen();render();toast("입장 코드를 바꿨어요. 학생들은 새 코드로 다시 들어와야 해요")};
 }
 
 /* ================== 시작 ================== */
-function start(){if(location.hash==="#teacher"){if(sPeer){try{sPeer.destroy()}catch(e){}sPeer=null}hostOpen();if(!rs().seen.includes(T.page))rs().seen.push(T.page)}
+function start(){if(location.hash==="#teacher"){if(sPeer){try{sPeer.destroy()}catch(e){}sPeer=null}if(!T.room){T.room=freeCode();saveT()}hostOpen();if(!rs().seen.includes(T.page))rs().seen.push(T.page)}
   else{hostClose();if(S.profile&&roomOk(S.profile.room||"")&&!sPeer&&!sOk)studentConnect()}}
 start();
 render();
