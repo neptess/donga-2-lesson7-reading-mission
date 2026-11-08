@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <style>
-/* Layout: one sentence at a time. Student tablet = narrow card; teacher projector = wide sentence + code + scoreboard. Stage colors: curtain red, bean green, rain blue. */
+/* Layout: one page at a time. Student tablet = narrow card; teacher projector = wide sentence + code + scoreboard. Stage colors: curtain red, bean green, rain blue. */
 :root{
   --paper:#f6f7f4; --card:#ffffff; --ink:#1d2321; --muted:#5f6a66; --line:#dde2de;
   --s1:#b23a2e; --s2:#3d7a37; --s3:#2c6aa3; --gold:#c98a12;
@@ -50,6 +50,7 @@ select,input.t{font:inherit;padding:9px 10px;border:1px solid var(--line);border
 .codebox .btn{font-size:1.05rem}
 /* sentence card */
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.card.see{gap:8px}
 .no{display:flex;gap:8px;align-items:center;font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums;flex-wrap:wrap}
 .star{color:var(--gold);font-weight:700}
 .en{font-family:var(--f-en);font-size:1.15rem;line-height:2.1}
@@ -59,6 +60,10 @@ input.blank{font-family:var(--f-en);font-size:1rem;border:0;border-bottom:2px so
 input.blank:disabled{border-bottom-style:dashed;opacity:.8}
 .ko input.blank,.ex input.blank{font-family:var(--f-body)}
 .form em{font-style:normal;font-size:.85em;color:var(--stage);margin-right:2px}
+.given{font-family:var(--f-en);color:var(--stage);font-weight:700}
+select.dd{width:auto;max-width:100%;padding:1px 6px;font-family:var(--f-en);font-size:1rem;border:2px solid var(--stage);border-radius:8px;vertical-align:middle;background:var(--card)}
+.ex select.dd{font-family:var(--f-body)}
+.wrong{text-decoration:underline wavy var(--bad);text-decoration-thickness:2px;text-underline-offset:5px;font-weight:700}
 .choice{display:inline-flex;gap:4px;flex-wrap:wrap;vertical-align:middle}
 .opt{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:0 9px;line-height:1.9;font-size:.95em}
 .opt:disabled{cursor:default}
@@ -68,14 +73,26 @@ input.blank:disabled{border-bottom-style:dashed;opacity:.8}
 .fixrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.9rem}
 .fixrow input{max-width:150px}
 .role{border-radius:12px;padding:14px 16px;font-weight:600;font-size:1.05rem}
-.role.me{background:var(--stage);color:#fff}
 .role.other{background:var(--paper);border:1px dashed var(--line)}
-.result{text-align:center;border-radius:16px;padding:22px 12px;font-family:var(--f-display);font-size:3rem;line-height:1.1}
+/* level picker */
+.lvpick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lvpick button{border:2px solid var(--line);background:var(--paper);color:var(--ink);border-radius:12px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:0;line-height:1.35}
+.lvpick button b{font-family:var(--f-display);font-size:1.6rem;font-weight:400}
+.lvpick button span{font-size:.78rem;color:var(--muted)}
+.lvpick button.sel{border-color:var(--stage);background:var(--stage);color:#fff}
+.lvpick button.sel span{color:#fff}
+.lvpick button:disabled{cursor:default}
+.lvpick button:disabled:not(.sel){opacity:.4}
+.result{text-align:center;border-radius:16px;padding:18px 12px;font-family:var(--f-display);font-size:2.6rem;line-height:1.1}
 .result small{display:block;font-family:var(--f-body);font-size:1rem;margin-top:6px}
 .result.ok{background:var(--okbg);color:var(--ok)}
 .result.no{background:var(--badbg);color:var(--bad)}
 mark{background:var(--hl);color:var(--ink);padding:0 3px;border-radius:4px;font-weight:700}
 .hint{font-size:.95rem;background:var(--hl);border-radius:8px;padding:8px 12px}
+.talkbox{border-radius:12px;padding:12px 16px;background:var(--paper);border:1px dashed var(--line);font-weight:600}
+.talkbox.me{background:var(--gold);color:#1d2321;border:0}
+.talkbox .frame{font-weight:400;margin-top:6px;font-size:1.05rem}
+.talkbox .kw{font-weight:400;font-size:.9rem;margin-top:4px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:99px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
 .toast.show{opacity:1}
 /* teacher */
@@ -85,51 +102,84 @@ mark{background:var(--hl);color:var(--ink);padding:0 3px;border-radius:4px;font-
 .proj .ko{font-size:clamp(1rem,1.6vw,1.3rem)}
 .slot{display:inline-block;min-width:4.5em;border-bottom:3px solid var(--stage);text-align:center;color:var(--stage);font-weight:700}
 .slot.c{border:0;min-width:0;font-weight:400;color:var(--ink)}
+.slotbtn{border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;border-radius:6px}
+.slotbtn:hover .slot{background:var(--hl)}
 .bigcode{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--stage);color:#fff;border-radius:14px;padding:12px 18px}
 .bigcode b{font-family:var(--f-en);font-size:clamp(2.4rem,5vw,3.6rem);letter-spacing:.25em;font-variant-numeric:tabular-nums}
 .bigcode .btn{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.5)}
 .nav{display:flex;gap:4px;flex-wrap:wrap}
 .nav button{min-width:34px;padding:3px 6px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;font-size:.8rem;font-variant-numeric:tabular-nums}
-.nav button.cur{background:var(--stage);border-color:var(--stage);color:#fff}
+.nav button.see{border-style:dashed;color:var(--muted)}
+.nav button.talk::after{content:" 🎤";font-size:.75em}
+.nav button.cur{background:var(--stage);border-color:var(--stage);border-style:solid;color:#fff}
 .nav button.seen{border-color:var(--stage)}
 .nav .sep{width:100%;font-size:.75rem;color:var(--muted);margin-top:4px}
+.talklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 14px}
 .score{display:flex;flex-direction:column;gap:6px}
 .sc{display:grid;grid-template-columns:4.5em 1fr auto;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
 .sc .g{font-weight:600}
 .sc .pts{font-family:var(--f-en);font-weight:700;font-size:1.4rem;text-align:right;font-variant-numeric:tabular-nums}
-.sc .bs{display:flex;gap:4px}
+.sc .bs{display:flex;gap:4px;align-items:center}
 .sc .bs button{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:2px 8px;font-size:.85rem}
 .sc.lead{border-color:var(--gold)}
 .bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--stage)}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.9rem}
+.conn{border-radius:10px;padding:8px 12px;background:var(--hl);font-size:.9rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.conn.bad{background:var(--badbg);color:var(--bad)}
+input.code4{font-family:var(--f-en);font-size:1.8rem;letter-spacing:.35em;text-align:center;max-width:8ch}
+.qrmini{border:0;padding:4px;background:#fff;border-radius:8px;line-height:0;width:76px;height:76px;flex:none}
+.qrmini svg{width:100%;height:100%}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
+.qrbig{background:#fff;color:#1d2321;border-radius:18px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:10px;max-width:92vw}
+.qrbig svg{width:min(70vh,80vw);height:auto}
+.qrbig b{font-family:var(--f-en);font-size:3rem;letter-spacing:.25em}
+.qrbig span{font-size:.85rem;word-break:break-all;text-align:center}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
 
 <div class="wrap" id="app"><p class="note">불러오는 중…</p></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
+/* ================== 수업 설정 ==================
+   QUIZ: 📝 문제 문장 번호. 학생마다 상/중/하를 골라 각자 풀어요.
+         나머지 문장은 👀 확인 문장 (빈칸만 보여 주고 선생님이 눌러서 답을 공개).
+   TALK: 🎤 설명 문장 번호. 정답 공개 때 모둠마다 설명할 학생을 뽑아요.
+         수업 중에 선생님 화면에서 켜고 끌 수도 있어요. */
+const QUIZ=[3,4,7,8,9,10,11,12,14,15,17,18,19,20,22,25,26,35,36,37,38];
+const TALK=[7,9,10,11,12,14,19,20,22,25,26,35,36,38];
+/* 수준별 점수 [한 번에 정답, 두 번째에 정답] */
+const PTS={3:[3,2],2:[2,1],1:[1,1]};
+const LV={3:{n:"상",d:"직접 쓰기"},2:{n:"중",d:"힌트 하나"},1:{n:"하",d:"골라서 답하기"}};
+/* 모둠 안 수준별 자리 수 (모둠 인원 → 상/중/하 최대 인원). 한 사람은 한 수준만 풀어요. */
+const QUOTA={1:{3:1,2:1,1:1},2:{3:1,2:1,1:1},3:{3:1,2:1,1:1},4:{3:1,2:2,1:1},5:{3:1,2:2,1:2},6:{3:2,2:2,1:2}};
+const SEE_MAX=3; /* 확인 문장 한 화면 최대 문장 수 */
+
 /* ================== 학습지 데이터 ==================
-   [[a|b]] 빈칸 입력 (정답 여러 개는 |)
-   {{x/y/z=y}} 고르기 (정답 여러 개는 =y|z)
-   <<base=a|b>> 형태 고쳐 쓰기
-   fix: 틀린 곳 고치기 */
+   [[답|다른답~오답1/오답2]]  빈칸 (~ 뒤는 '하' 수준 드롭다운에 섞일 오답)
+   {{x/y/z=y}}               보기 (영어 줄은 상: 직접 쓰기 / 중: 첫 글자 힌트 / 하: 드롭다운. 한글 줄은 모두 보기 고르기)
+   <<기본형=답~오답1/오답2>>    형태 바꿔 쓰기
+   fix:{w:[틀린 부분],r:[고친 것],d:[오답]}  틀린 곳 고치기
+   key:[...]                 🎤 설명할 때 보여 줄 힌트 단어 */
 const STAGES=[
 {n:1,title:"Break a Leg",ko:"다리 부러지세요",c:"--s1",
  sents:[
  {id:1,en:"Break a Leg",ko:"다리 {{부러지세요/조심하세요/펴세요=부러지세요}}"},
  {id:2,en:"It was the day of the school play.",ko:"학교 {{연극/놀이/운동회=연극}}의 날이었다.",tip:"play: (명사) 연극"},
- {id:3,en:"Lilly practiced for the play [[for]] weeks.",ko:"Lilly는 연습했다/ 그 연극을 위해/ 몇 주 동안.",tip:"for + 기간: ~ 동안"},
- {id:4,star:1,en:"The curtains [[were about to]] go up, and she felt very nervous.",ko:"커튼이 막 {{올라가려던/내려오려던/찢어지려던=올라가려던}} 참에, 그녀는 매우 긴장했다.",tip:"be about to + 동사원형 = 막 ~하려던 참이다. 주어 The curtains(복수) + 과거 → were about to"},
+ {id:3,en:"Lilly practiced for the play [[for~during/while]] weeks.",ko:"Lilly는 연습했다/ 그 연극을 위해/ 몇 주 동안.",tip:"for + 기간: ~ 동안"},
+ {id:4,star:1,en:"The curtains [[were about to~was about to/were about]] go up, and she felt very nervous.",ko:"커튼이 막 {{올라가려던/내려오려던/찢어지려던=올라가려던}} 참에, 그녀는 매우 긴장했다.",tip:"be about to + 동사원형 = 막 ~하려던 참이다. 주어 The curtains(복수) + 과거 → were about to"},
  {id:5,en:"Her friend smiled and said, \"[[Break]] a leg!\"",ko:"그녀의 친구가 웃으며 말했다, \"다리 부러져라!\""},
  {id:6,en:"Lilly said, \"Thanks. [[I will|I'll]]!\"",ko:"Lilly는 \"고마워. {{그럴게/싫어/미안해=그럴게}}!\"라고 말했다."},
- {id:7,en:"She [[went on|got on]] the stage and performed {{successful/successfully=successfully}}.",ko:"그녀는 무대에 올라갔고 {{성공적으로/실패하며/조용히=성공적으로}} 공연했다.",tip:"동사 performed를 꾸미는 말 → 부사 successfully"},
- {id:8,star:1,en:"[[Although|Though|Even though]] \"Break a leg\" may sound [[like]] a bad thing, it actually means \"Good luck!\"",ko:"비록 '다리 부러지세요'가 나쁜 것처럼 들릴지라도, 그것은 사실 \"{{행운을 빌어/조심해/잘 가=행운을 빌어}}!\"를 의미한다.",tip:"although: 비록 ~일지라도 / sound like + 명사: ~처럼 들리다"},
- {id:9,star:1,en:"German actors {{who/which/that=who|that}} came to the United States in the early 20th century first used this phrase.",ex:"이 문장의 본동사(한 단어): [[used]]",ko:"독일 배우들이/ 20세기 초에 미국에 온/ 처음 사용했다/ 이 {{표현/연극/무대=표현}}을.",tip:"선행사 German actors(사람) → 주격 관계대명사 who/that. 관계사절(who ~ century) 뒤의 used가 본동사"},
- {id:10,en:"By <<wish=wishing>> each other bad luck, they believed that it would go away.",ko:"서로에게 {{불운/행운/칭찬=불운}}을 빌어줌으로써, 그들은 불운이 {{사라질/커질/돌아올=사라질}} 거라고 믿었다.",tip:"전치사(By) 뒤 → 동명사(-ing)"},
- {id:11,en:"This expression [[is]] still [[used]] today.",ko:"이 {{표현/연극/공연=표현}}은 오늘날에도 여전히 사용된다.",tip:"표현이 '사용되는' 것 → 수동태 be + p.p."},
- {id:12,star:1,en:"\"Break a leg\" is a phrase {{whom/which/that=which|that}} people say to wish performers good luck before a show.",ex:"to wish → {{명사적/형용사적/부사적=부사적}} 용법 (~하기 위해, 목적)",ko:"'다리 부러지세요'는 어구이다/ 사람들이 말하는/ 공연자들에게 {{행운/불운/박수=행운}}을 빌기 위해/ 공연 전에.",tip:"선행사 a phrase(사물) → 목적격 관계대명사 which/that (whom은 사람). to wish는 '~하기 위해'(목적)"},
+ {id:7,en:"She [[went on|got on~went off/got off]] the stage and performed {{successful/successfully=successfully}}.",ko:"그녀는 무대에 올라갔고 {{성공적으로/실패하며/조용히=성공적으로}} 공연했다.",tip:"동사 performed를 꾸미는 말 → 부사 successfully",key:["동사 performed를 꾸미는 말","부사 (-ly)"]},
+ {id:8,star:1,en:"[[Although|Though|Even though~Because/So]] \"Break a leg\" may sound [[like~as/to]] a bad thing, it actually means \"Good luck!\"",ko:"비록 '다리 부러지세요'가 나쁜 것처럼 들릴지라도, 그것은 사실 \"{{행운을 빌어/조심해/잘 가=행운을 빌어}}!\"를 의미한다.",tip:"although: 비록 ~일지라도 / sound like + 명사: ~처럼 들리다"},
+ {id:9,star:1,en:"German actors {{who/which/that=who|that}} came to the United States in the early 20th century first used this phrase.",ex:"이 문장의 본동사(한 단어): [[used~came/first]]",ko:"독일 배우들이/ 20세기 초에 미국에 온/ 처음 사용했다/ 이 {{표현/연극/무대=표현}}을.",tip:"선행사 German actors(사람) → 주격 관계대명사 who/that. 관계사절(who ~ century) 뒤의 used가 본동사",key:["선행사 German actors = 사람","주격 관계대명사","관계사절 뒤에 오는 본동사"]},
+ {id:10,en:"By <<wish=wishing~wish/wished>> each other bad luck, they believed that it would go away.",ko:"서로에게 {{불운/행운/칭찬=불운}}을 빌어줌으로써, 그들은 불운이 {{사라질/커질/돌아올=사라질}} 거라고 믿었다.",tip:"전치사(By) 뒤 → 동명사(-ing)",key:["전치사 By 뒤","동명사 (-ing)"]},
+ {id:11,en:"This expression [[is~are/does]] still [[used~use/using]] today.",ko:"이 {{표현/연극/공연=표현}}은 오늘날에도 여전히 사용된다.",tip:"표현이 '사용되는' 것 → 수동태 be + p.p.",key:["표현이 '사용되는' 것","수동태 be + p.p.","주어 This expression = 단수"]},
+ {id:12,star:1,en:"\"Break a leg\" is a phrase {{whom/which/that=which|that}} people say to wish performers good luck before a show.",ex:"to wish → {{명사적/형용사적/부사적=부사적}} 용법 (~하기 위해, 목적)",ko:"'다리 부러지세요'는 어구이다/ 사람들이 말하는/ 공연자들에게 {{행운/불운/박수=행운}}을 빌기 위해/ 공연 전에.",tip:"선행사 a phrase(사물) → 목적격 관계대명사 which/that (whom은 사람). to wish는 '~하기 위해'(목적)",key:["선행사 a phrase = 사물","목적격 관계대명사 (whom은 사람)","to wish = ~하기 위해"]},
  {id:"Q1",en:"How did Lilly feel when the curtains were about to go up? {{She felt very nervous./She felt very happy./She felt bored.=She felt very nervous.}}"},
  {id:"Q2",en:"Lilly couldn't get on the stage because her leg was broken. {{T/F=F}}"},
  {id:"Q3",en:"\"Break a leg\" is a phrase that people say to wish performers bad luck. {{T/F=F}}"}
@@ -137,19 +187,19 @@ const STAGES=[
 {n:2,title:"Spill the Beans",ko:"콩을 쏟다",c:"--s2",
  sents:[
  {id:13,en:"Spill the Beans",ko:"콩을 {{쏟다/심다/먹다=쏟다}}"},
- {id:14,en:"Tommy and Lisa <<prepare=were preparing|prepared>> a surprise party for Hana.",ko:"Tommy와 Lisa는 준비하고 있었다/ {{깜짝/생일/졸업=깜짝}} 파티를/ 하나를 위해.",tip:"'준비하고 있었다' → 과거진행형 were + -ing"},
- {id:15,star:1,en:"But Tommy was not [[good at keeping]] secrets.",ko:"그러나 Tommy는 비밀을 {{지키는/말하는/만드는=지키는}} 것을 잘하지 못했다.",tip:"be good at -ing: ~을 잘하다. 전치사 at 뒤 → 동명사 keeping"},
+ {id:14,en:"Tommy and Lisa <<prepare=were preparing|prepared~was preparing/are preparing>> a surprise party for Hana.",ko:"Tommy와 Lisa는 준비하고 있었다/ {{깜짝/생일/졸업=깜짝}} 파티를/ 하나를 위해.",tip:"'준비하고 있었다' → 과거진행형 were + -ing",key:["'준비하고 있었다'","과거진행형 be동사 과거 + -ing","주어 Tommy and Lisa = 복수"]},
+ {id:15,star:1,en:"But Tommy was not [[good at keeping~good at keep/good to keeping]] secrets.",ko:"그러나 Tommy는 비밀을 {{지키는/말하는/만드는=지키는}} 것을 잘하지 못했다.",tip:"be good at -ing: ~을 잘하다. 전치사 at 뒤 → 동명사 keeping"},
  {id:16,en:"So, Lisa told him, \"Don't spill the beans.\"",ko:"그래서, Lisa는 그에게 \"{{비밀을 누설하지 마/콩을 먹지 마/늦지 마=비밀을 누설하지 마}}\"라고 말했다."},
- {id:17,star:1,en:"Tommy said, \"Don't worry. I promise to not tell Hana.\"",fix:{w:["to not"],r:["not to"]},ko:"Tommy는 \"걱정 마. 하나에게 말하지 않겠다고 약속해\"라고 말했다.",tip:"to부정사의 부정: not to + 동사원형 (to not ✗)"},
- {id:18,en:"Tommy [[kept]] his promise and the surprise party was a big success.",ko:"Tommy는 그의 약속을 지켰고 깜짝 파티는 크게 {{성공/실패/취소=성공}}했다.",tip:"keep a promise: 약속을 지키다 (과거형 kept)"},
- {id:19,star:1,en:"Hana was {{complete/completely=completely}} {{surprising/surprised=surprised}}.",ko:"하나는 완전히 깜짝 놀랐다.",tip:"형용사를 꾸미는 말 → 부사 completely / 감정을 느끼는 사람 → -ed (surprised)"},
- {id:20,en:"What does the phrase \"[[spill]] the beans\" means?",fix:{w:["means"],r:["mean"]},ko:"이 어구 '콩을 쏟다'가 무엇을 의미하니?",tip:"does가 있는 의문문 → 동사원형 mean"},
+ {id:17,star:1,en:"Tommy said, \"Don't worry. I promise to not tell Hana.\"",fix:{w:["to not"],r:["not to"],d:["no to","don't to"]},ko:"Tommy는 \"걱정 마. 하나에게 말하지 않겠다고 약속해\"라고 말했다.",tip:"to부정사의 부정: not to + 동사원형 (to not ✗)"},
+ {id:18,en:"Tommy [[kept~keep/keeped]] his promise and the surprise party was a big success.",ko:"Tommy는 그의 약속을 지켰고 깜짝 파티는 크게 {{성공/실패/취소=성공}}했다.",tip:"keep a promise: 약속을 지키다 (과거형 kept)"},
+ {id:19,star:1,en:"Hana was {{complete/completely=completely}} {{surprising/surprised=surprised}}.",ko:"하나는 완전히 깜짝 놀랐다.",tip:"형용사를 꾸미는 말 → 부사 completely / 감정을 느끼는 사람 → -ed (surprised)",key:["형용사를 꾸미는 말 → 부사","감정을 느끼는 사람 → -ed"]},
+ {id:20,en:"What does the phrase \"[[spill~spills/spilled]] the beans\" means?",fix:{w:["means"],r:["mean"],d:["meant","meaning"]},ko:"이 어구 '콩을 쏟다'가 무엇을 의미하니?",tip:"does가 있는 의문문 → 동사원형 mean",key:["does가 있는 의문문","동사원형"]},
  {id:21,en:"It means [[to reveal]] a secret.",ko:"그것은 비밀을 {{드러내는/지키는/숨기는=드러내는}} 것을 의미한다."},
- {id:22,en:"Where does this phrase {{come/comes=come}} [[from]]?",ko:"이 어구는 어디에서 유래한 건가?",tip:"come from: ~에서 유래하다. does 의문문 → 동사원형"},
+ {id:22,en:"Where does this phrase {{come/comes=come}} [[from~of/to]]?",ko:"이 어구는 어디에서 유래한 건가?",tip:"come from: ~에서 유래하다. does 의문문 → 동사원형",key:["come from = ~에서 유래하다","does 의문문 → 동사원형"]},
  {id:23,en:"It comes from an [[ancient]] Greek way of voting.",ko:"이것은 유래한 것이다/ 고대 그리스의 {{투표/요리/전쟁=투표}} 방법에서."},
  {id:24,en:"[[When]] Greeks voted, they put a white or black bean in a big jar.",ko:"그리스인들이 {{투표할/요리할/여행할=투표할}} 때, 그들은 넣었다/ 흰색이나 검은색 콩을/ 큰 {{항아리/상자/주머니=항아리}}에."},
- {id:25,star:1,en:"[[When|After|Once]] the voting was completed, the beans <<spill=were spilled out|were spilled>> to reveal the results.",ko:"투표가 {{완료/시작/취소=완료}}되었을 때, 그 콩들은 쏟아졌다/ 결과를 {{드러내기 위해/숨기기 위해/세기 위해=드러내기 위해}}.",tip:"콩이 '쏟아지는' 것 → 수동태 were spilled (out). to reveal: ~하기 위해"},
- {id:26,en:"From then, people began <<use=to use|using>> this phrase with a new meaning.",ko:"{{그때부터/옛날에/지금도=그때부터}}, 사람들은 사용하기 시작했다/ 이 어구를/ 새로운 {{의미/규칙/소리=의미}}로.",tip:"begin + to부정사 / 동명사 모두 가능"},
+ {id:25,star:1,en:"[[When|After|Once~Before/Because]] the voting was completed, the beans <<spill=were spilled out|were spilled~spilled out/were spilling out>> to reveal the results.",ko:"투표가 {{완료/시작/취소=완료}}되었을 때, 그 콩들은 쏟아졌다/ 결과를 {{드러내기 위해/숨기기 위해/세기 위해=드러내기 위해}}.",tip:"콩이 '쏟아지는' 것 → 수동태 were spilled (out). to reveal: ~하기 위해",key:["콩이 '쏟아지는' 것 → 수동태","to reveal = ~하기 위해"]},
+ {id:26,en:"From then, people began <<use=to use|using~use/used>> this phrase with a new meaning.",ko:"{{그때부터/옛날에/지금도=그때부터}}, 사람들은 사용하기 시작했다/ 이 어구를/ 새로운 {{의미/규칙/소리=의미}}로.",tip:"begin + to부정사 / 동명사 모두 가능",key:["begin 뒤에 오는 형태","두 가지 모두 가능"]},
  {id:"Q4",en:"The phrase \"spill the beans\" means to {{reveal/keep=reveal}} a secret."}
  ]},
 {n:3,title:"Take a Rain Check",ko:"우천 교환권을 받다",c:"--s3",
@@ -162,239 +212,413 @@ const STAGES=[
  {id:32,star:1,en:"{{That/Although=Although}} Sarah was a little {{disappointed/disappointing=disappointed}}, she understood Emily's situation.",ko:"{{비록/왜냐하면/그래서=비록}} Sarah는 조금 실망했지만, 그녀는 Emily의 {{상황/기분/할머니=상황}}을 이해했다.",tip:"although: 비록 ~이지만 / 감정을 느끼는 사람 → -ed (disappointed)"},
  {id:33,en:"What does \"take a rain check\" mean?",ko:"'{{우천 교환권을 받다/콩을 쏟다/다리 부러지세요=우천 교환권을 받다}}'가 무엇을 의미하니?"},
  {id:34,en:"It means to [[refuse]] an offer politely but [[want]] to do it later.",ko:"그것은 제안을 {{정중하게/화내며/빠르게=정중하게}} 거절하지만 나중에 하고 싶어 한다는 것을 의미한다."},
- {id:35,star:1,en:"The phrase \"rain check\" [[was]] first <<use=used>> at a baseball game in the 1880s.",ko:"이 어구 '우천 교환권'은 처음 사용되었다/ 1880년대에 {{야구/축구/농구=야구}} 경기에서.",tip:"어구가 '사용된' 것 + 과거 → 수동태 was used"},
- {id:36,star:1,en:"A rain check was a ticket [[which|that]] people got for a future game when a baseball game {{canceled/was canceled=was canceled}} because of rain.",ko:"우천 교환권은 표였다/ 사람들이 미래의 경기를 위해 받는// 야구 경기가 {{취소/연기/시작=취소}}됐을 때/ 비 때문에.",tip:"선행사 a ticket(사물) → which/that / 경기가 '취소된' 것 → 수동태 was canceled"},
- {id:37,en:"Later, rain checks were [[given|used|offered]] at other sporting events.",ko:"이후에, 우천 교환권들은 주어졌다/ 다른 {{스포츠/음악/미술=스포츠}} 행사들에서."},
- {id:38,star:1,en:"Over time, \"take a rain check\" has widely been used <<say=to say>> that you can't do something now and want to do it later.",ko:"{{시간이 지나며/처음에/어제=시간이 지나며}}, '우천 교환권을 받다'는 널리 사용되어 왔다/ 말하기 위해/ 지금은 할 수 없지만 {{나중에 하고 싶다/영원히 안 한다/지금 하고 싶다=나중에 하고 싶다}}는 것을.",tip:"~하기 위해(목적) → to부정사 to say. has been used: 현재완료 수동태"},
+ {id:35,star:1,en:"The phrase \"rain check\" [[was~were/is]] first <<use=used~use/using>> at a baseball game in the 1880s.",ko:"이 어구 '우천 교환권'은 처음 사용되었다/ 1880년대에 {{야구/축구/농구=야구}} 경기에서.",tip:"어구가 '사용된' 것 + 과거 → 수동태 was used",key:["어구가 '사용된' 것","과거 수동태 was + p.p."]},
+ {id:36,star:1,en:"A rain check was a ticket [[which|that~who/what]] people got for a future game when a baseball game {{canceled/was canceled=was canceled}} because of rain.",ko:"우천 교환권은 표였다/ 사람들이 미래의 경기를 위해 받는// 야구 경기가 {{취소/연기/시작=취소}}됐을 때/ 비 때문에.",tip:"선행사 a ticket(사물) → which/that / 경기가 '취소된' 것 → 수동태 was canceled",key:["선행사 a ticket = 사물","경기가 '취소된' 것 → 수동태"]},
+ {id:37,en:"Later, rain checks were [[given|used|offered~give/giving]] at other sporting events.",ko:"이후에, 우천 교환권들은 주어졌다/ 다른 {{스포츠/음악/미술=스포츠}} 행사들에서."},
+ {id:38,star:1,en:"Over time, \"take a rain check\" has widely been used <<say=to say~say/said>> that you can't do something now and want to do it later.",ko:"{{시간이 지나며/처음에/어제=시간이 지나며}}, '우천 교환권을 받다'는 널리 사용되어 왔다/ 말하기 위해/ 지금은 할 수 없지만 {{나중에 하고 싶다/영원히 안 한다/지금 하고 싶다=나중에 하고 싶다}}는 것을.",tip:"~하기 위해(목적) → to부정사 to say. has been used: 현재완료 수동태",key:["~하기 위해 (목적)","to부정사"]},
  {id:"Q5",en:"\"Take a rain check\" means to cancel plans forever. {{T/F=F}}"},
  {id:"Q6",en:"In the 1880s, when a baseball game was canceled because of rain, people got a ticket for a future game. {{T/F=T}}"}
  ]}
 ];
 /* 모든 문항을 한 줄로 */
-const ITEMS=[];STAGES.forEach(sg=>sg.sents.forEach(s=>ITEMS.push(Object.assign({stage:sg},s))));
-const N=ITEMS.length;
+const ITEMS=[];STAGES.forEach(sg=>sg.sents.forEach(s=>ITEMS.push(Object.assign({stage:sg,quiz:QUIZ.includes(s.id)},s))));
+/* 화면(페이지) 만들기: 문제 문장은 한 화면에 하나, 이어지는 확인 문장은 최대 SEE_MAX개씩 고르게 나눠 묶기 */
+const PAGES=[];(()=>{let run=[];
+  const flush=()=>{if(!run.length)return;const k=Math.ceil(run.length/SEE_MAX),base=Math.floor(run.length/k),extra=run.length%k;let at=0;
+    for(let j=0;j<k;j++){const n=base+(j<extra?1:0);PAGES.push({see:true,items:run.slice(at,at+n)});at+=n}run=[]};
+  ITEMS.forEach((it,i)=>{if(it.quiz){flush();PAGES.push({see:false,items:[i]})}else{if(run.length&&ITEMS[run[0]].stage!==it.stage)flush();run.push(i)}});flush()})();
+const NP=PAGES.length;
+const first=pg=>ITEMS[PAGES[pg].items[0]];
 
 /* ================== 유틸 ================== */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm=s=>String(s||"").toLowerCase().replace(/[’‘`]/g,"'").replace(/[“”]/g,'"').replace(/[.!?,]+$/,"").replace(/\s+/g," ").trim();
 const TOK=/\[\[(.+?)\]\]|\{\{(.+?)\}\}|<<(.+?)>>/g;
+const split2=(str,ch)=>{const i=str.indexOf(ch);return i<0?[str,""]:[str.slice(0,i),str.slice(i+1)]};
 function parse(tpl){const out=[];let last=0,m;TOK.lastIndex=0;
   while((m=TOK.exec(tpl))){if(m.index>last)out.push({t:tpl.slice(last,m.index)});
-    if(m[1])out.push({k:"in",ans:m[1].split("|")});
+    if(m[1]){const [a,d]=split2(m[1],"~");out.push({k:"in",ans:a.split("|"),d:d?d.split("/"):[]})}
     else if(m[2]){const i=m[2].lastIndexOf("=");out.push({k:"ch",opts:m[2].slice(0,i).split("/"),ans:m[2].slice(i+1).split("|")})}
-    else{const i=m[3].indexOf("=");out.push({k:"fm",base:m[3].slice(0,i),ans:m[3].slice(i+1).split("|")})}
+    else{const [b,rest]=split2(m[3],"=");const [a,d]=split2(rest,"~");out.push({k:"fm",base:b,ans:a.split("|"),d:d?d.split("/"):[]})}
     last=TOK.lastIndex}
   if(last<tpl.length)out.push({t:tpl.slice(last)});return out}
-function itemsOf(s){const items=[];["en","ex","ko"].forEach(p=>{if(!s[p])return;let i=0;parse(s[p]).forEach(seg=>{if(seg.k){seg.key=`${s.id}-${p}-${i++}`;items.push(seg)}})});
-  if(s.fix){items.push({k:"fx",key:s.id+"-fw",ans:s.fix.w});items.push({k:"fx",key:s.id+"-fr",ans:s.fix.r})}return items}
+/* 문장의 모든 칸: lev=수준에 따라 모양이 바뀌는 칸 (한글 줄 보기 고르기는 그대로) */
+function unitsOf(s){const u=[];["en","ex","ko"].forEach(p=>{if(!s[p])return;let i=0;parse(s[p]).forEach(seg=>{if(seg.k)u.push({seg,key:`${s.id}-${p}-${i++}`,lev:seg.k!=="ch"||p==="en"})})});return u}
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),1800)}
-const label=s=>typeof s.id==="number"?`${s.id}번 문장`:`Step 3 · ${s.id}`;
+const label=s=>typeof s.id==="number"?`${s.id}번 문장`:`내용 확인 ${s.id}`;
 /* 해시: 같은 코드면 모든 기기가 같은 결과를 계산 (연결 불필요) */
 function h(str){let x=2166136261;for(let i=0;i<str.length;i++){x^=str.charCodeAt(i);x=Math.imul(x,16777619)}return x>>>0}
-const itemOfCode=code=>h("k"+code)%N;
-const writerOf=(code,grp,size)=>h(code+"|g"+grp)%size+1;
+const shuf=(arr,seed)=>arr.map(v=>[h(seed+"|"+v),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const setStage=s=>document.documentElement.style.setProperty("--stage",`var(${s.stage.c})`);
+/* 중 수준: 여러 단어 답이면 한 단어를 보여 줌 (2단어 → 첫 단어, 3단어 이상 → 가운데 단어) */
+const givenIdx=words=>words.length===2?0:Math.floor(words.length/2);
 
-/* ================== 실시간 연결 (Firebase Realtime Database) ==================
-   아래 따옴표 안에 Firebase 데이터베이스 주소를 넣으면 실시간 모드가 켜집니다.
-   비워 두면 열쇠 코드 방식(연결 없음)으로 작동합니다. */
-const FIREBASE_URL="";
-const LIVE=/^https:\/\/[^\s"]+$/.test(FIREBASE_URL);
-const FB=FIREBASE_URL.replace(/\/+$/,"");
-const roomOk=r=>/^[a-z0-9-]{1,20}$/.test(r);
-async function fput(path,v){try{const r=await fetch(`${FB}/${path}.json`,{method:"PUT",body:JSON.stringify(v)});return r.ok}catch(e){return false}}
-async function fdel(path){try{await fetch(`${FB}/${path}.json`,{method:"DELETE"})}catch(e){}}
-function fwatch(path,cb){let tree=null;const es=new EventSource(`${FB}/${path}.json`);
-  const setAt=(p,d,patch)=>{const parts=p.split("/").filter(Boolean);
-    if(!parts.length){if(patch&&tree&&typeof tree==="object"){for(const k in d){if(d[k]===null)delete tree[k];else tree[k]=d[k]}}else tree=d;return}
-    if(!tree||typeof tree!=="object")tree={};let o=tree;for(let i=0;i<parts.length-1;i++){if(!o[parts[i]]||typeof o[parts[i]]!=="object")o[parts[i]]={};o=o[parts[i]]}
-    const k=parts[parts.length-1];
-    if(patch){const t=o[k]&&typeof o[k]==="object"?o[k]:{};for(const j in d){if(d[j]===null)delete t[j];else t[j]=d[j]}o[k]=t}
-    else if(d===null)delete o[k];else o[k]=d};
-  const on=patch=>e=>{try{const m=JSON.parse(e.data);setAt(m.path,m.data,patch);cb(tree,true)}catch(x){}};
-  es.addEventListener("put",on(false));es.addEventListener("patch",on(true));es.onerror=()=>cb(tree,false);return es}
+/* ================== 연결 (PeerJS · 서버 없음) ==================
+   선생님 화면이 방을 열고 채점·진행을 맡아요. 학생 태블릿은 입장 코드로 선생님 화면에 직접 연결돼요.
+   수업 중에는 선생님 화면을 닫지 마세요 (새로고침은 괜찮아요). */
+const PREFIX="idiom-reading-mission-v1-";
+const mkey=(g,n)=>`g${g}n${n}`;
+const roomOk=r=>/^\d{4}$/.test(r);
 const rid=()=>Math.random().toString(36).slice(2,8);
+const newRoom=()=>String(1000+Math.floor(Math.random()*9000));
+const HAS_PEER=typeof Peer==="function";
+const joinURL=code=>location.origin+location.pathname+"?c="+code;
 
 /* ================== 저장 (기기별) ================== */
 function loadKey(k,def){try{const r=JSON.parse(localStorage.getItem(k));if(r)return r}catch(e){}return def}
 function saveKey(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-let S=loadKey("im-student-v2",{profile:null,code:null,val:{},res:{}});
-let T=loadKey("im-teacher-v2",{groups:7,idx:0,code:null,reveal:false,score:{},seen:[]});
-const saveS=()=>saveKey("im-student-v2",S),saveT=()=>saveKey("im-teacher-v2",T);
-/* 반 코드별 선생님 기록 (조정 점수, 띄운 문장, 위치) */
-function rs(){const k=(LIVE&&T.room)?T.room:"_";T.byRoom=T.byRoom||{};return T.byRoom[k]||(T.byRoom[k]={score:{},seen:[]})}
+/* 미리보기용: 주소에 ?as=1 처럼 붙이면 같은 브라우저 탭마다 다른 학생으로 저장 */
+const AS=(new URLSearchParams(location.search).get("as")||"").replace(/[^a-zA-Z0-9]/g,"").slice(0,10);
+const SKEY="irm-student-v1"+(AS?"-"+AS:"");
+let S=loadKey(SKEY,{profile:null,val:{},res:{},lv:{}});
+let T=loadKey("irm-teacher-v1",{quota:true,groups:7,page:0,code:null,reveal:false,open:{},tip:false,pick:null,talkX:{},room:null});
+S.val=S.val||{};S.res=S.res||{};S.lv=S.lv||{};
+T.open=T.open||{};if(T.quota==null)T.quota=true;T.talkX=T.talkX||{};if(!(T.page>=0&&T.page<NP))T.page=0;
+const saveS=()=>saveKey(SKEY,S);
+let tSave=null;const saveT=()=>{clearTimeout(tSave);tSave=setTimeout(()=>saveKey("irm-teacher-v1",T),200)};
+addEventListener("pagehide",()=>{if(location.hash==="#teacher")saveKey("irm-teacher-v1",T)});
+/* 입장 코드별 선생님 기록 (모둠원, 제출, 보너스 점수, 화면별 코드, 설명자 기록) */
+function rs(){const k=T.room||"_";T.byRoom=T.byRoom||{};const r=T.byRoom[k]||(T.byRoom[k]={});
+  ["score","seeds","said","talkBy","subs","members","claims"].forEach(f=>{if(!r[f]||typeof r[f]!=="object")r[f]={}});if(!Array.isArray(r.seen))r.seen=[];return r}
+const isTalk=s=>s.quiz&&(T.talkX[s.id]!=null?!!T.talkX[s.id]:TALK.includes(s.id));
 
 function render(){if(location.hash==="#teacher")return renderTeacher();renderStudent()}
-window.addEventListener("hashchange",render);
+let rT=null;const renderSoon=()=>{clearTimeout(rT);rT=setTimeout(render,120)};
+window.addEventListener("hashchange",()=>{start();render()});
+
+/* ================== 공통: 빈칸 보여 주기 (선생님 화면, 확인 문장, 정답 공개) ================== */
+function slotHTML(s,part,mode){mode=mode||{};let i=0;
+  return parse(s[part]).map(seg=>{if(!seg.k)return esc(seg.t);const key=`${s.id}-${part}-${i++}`;
+    const open=mode.reveal||(mode.open&&mode.open[key]);let o;
+    if(open)o=`<mark>${esc(seg.ans[0])}</mark>`;
+    else if(seg.k==="ch")o=`<span class="slot c">( ${seg.opts.map(esc).join(" / ")} )</span>`;
+    else if(seg.k==="fm")o=`<span class="slot">(${esc(seg.base)})</span>`;
+    else o=`<span class="slot">&nbsp;</span>`;
+    return mode.click?`<button type="button" class="slotbtn" data-open="${key}" aria-label="이 칸 열기/닫기">${o}</button>`:o}).join("")}
+function fixReveal(en,s){const w=esc(s.fix.w[0]);return en.replace(w,`<s>${w}</s> <mark>${esc(s.fix.r[0])}</mark>`)}
+function seeCard(s,mode){return `<div class="card see"><div class="no"><span class="lv">${s.stage.n}단계 · ${esc(s.stage.title)}</span><span>${label(s)}</span></div>
+  <div class="en">${slotHTML(s,"en",mode)}</div>${s.ex?`<div class="ex">${slotHTML(s,"ex",mode)}</div>`:""}${s.ko?`<div class="ko">${slotHTML(s,"ko",mode)}</div>`:""}</div>`}
+
+/* ================== 학생: 연결 ================== */
+let sPeer=null,sConn=null,sOk=false,sEver=false,sLast=0,sRetry=0,sTimer=null,sWhy="",liveState=null,lastSeed=null;
+function sSend(m){if(sConn&&sConn.open)try{sConn.send(m)}catch(e){}}
+function studentConnect(){clearTimeout(sTimer);if(sPeer){try{sPeer.destroy()}catch(e){}}sPeer=null;sConn=null;sOk=false;
+  const p=S.profile;if(!p||!roomOk(p.room||"")||!HAS_PEER)return;
+  const peer=new Peer();sPeer=peer;const live=()=>sPeer===peer;
+  const to=setTimeout(()=>{if(live()&&!sOk){sWhy=sEver?"":"선생님 방을 찾지 못했어요. 입장 코드를 확인하거나, 선생님 화면이 열려 있는지 확인해 주세요.";sLost()}},12000);
+  peer.on("open",()=>{if(!live())return;const c=peer.connect(PREFIX+p.room,{reliable:true});sConn=c;
+    c.on("open",()=>{if(live())c.send({t:"join",grp:p.grp,num:p.num,name:p.name||""})});
+    c.on("data",d=>{if(!live()||!d)return;sLast=Date.now();
+      if(d.t==="state"){clearTimeout(to);if(!sOk){sOk=true;sEver=true;sRetry=0;sWhy="";resendMine()}onState(d.st)}
+      else if(d.t==="deny"){toast(d.msg)}
+      else if(d.t==="err"){clearTimeout(to);sWhy=d.msg;try{peer.destroy()}catch(e){}sPeer=null;S.profile=null;saveS();render()}});
+    c.on("close",()=>{if(live())sLost()});c.on("error",()=>{if(live())sLost()})});
+  peer.on("error",e=>{if(!live())return;clearTimeout(to);
+    if(e&&e.type==="peer-unavailable"&&!sEver)sWhy="선생님 방을 찾지 못했어요. 입장 코드를 확인하거나, 선생님 화면이 열려 있는지 확인해 주세요.";sLost()});
+}
+function sLost(){if(sPeer){try{sPeer.destroy()}catch(e){}}sPeer=null;sConn=null;sOk=false;sRetry++;renderSoon();clearTimeout(sTimer);sTimer=setTimeout(studentConnect,Math.min(10000,1500*sRetry))}
+/* 몇 초마다 신호를 보내고, 선생님 화면의 대답이 끊기면 다시 연결 */
+function sCheck(){if(!S.profile||location.hash==="#teacher")return;if(sOk){if(Date.now()-sLast>15000)sLost();else sSend({t:"ping"})}}
+setInterval(sCheck,5000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")sCheck()});
+/* 끊겼다 다시 들어오면 이 화면의 내 제출 기록을 다시 보내기 (선생님 화면이 놓쳤을 수도 있으니) */
+function resendMine(){const p=S.profile;if(!p)return;Object.keys(S.res).forEach(seed=>{const r=S.res[seed];if(r&&r.room===p.room&&r.tries)sendSub(seed)})}
+function sendSub(seed){const r=S.res[seed],p=S.profile;if(!r||!p)return;sSend({t:"sub",seed,rec:{grp:p.grp,num:p.num,lv:r.lv,tries:r.tries,done:r.done?1:0,ok:r.ok?1:0,pts:r.pts||0}})}
+function onState(st){liveState=st&&typeof st==="object"?st:null;const seed=liveState&&liveState.seed;const moved=seed!==lastSeed;
+  if(seed&&S.profile){const mine=(liveState.cl||{})[mkey(S.profile.grp,S.profile.num)];const r=S.res[seed];
+    if(mine)S.lv[seed]=mine;else if(!(r&&r.tries))delete S.lv[seed];saveS()}
+  if(moved){lastSeed=seed;BAD=new Set();resendMine()}render();if(moved)scrollTo(0,0)}
 
 /* ================== 학생 화면 ================== */
 function renderStudent(){$("#app").className="wrap";
-  if(!S.profile||(LIVE&&!roomOk(S.profile.room||"")))return renderSetup();
+  if(!S.profile||!roomOk(S.profile.room||""))return renderSetup();
   const p=S.profile;
-  const head=`<div class="top"><div><h1>관용구 리딩 미션</h1><div class="who">${p.grp}모둠 · ${p.num}번 ${esc(p.name||"")} · 모둠 ${p.size}명</div></div>
+  const head=`<div class="top"><div><h1>관용구 리딩 미션</h1><div class="who">${p.grp}모둠 · ${p.num}번 ${esc(p.name||"")} · 입장 코드 ${esc(p.room)}</div></div>
     <span id="chg"><button class="btn ghost small" id="edit">정보 바꾸기</button></span></div>`;
-  const codeUI=LIVE?`<div class="note">${liveOk?"● 선생님 화면과 연결됨 · 문장이 자동으로 바뀌어요":"○ 연결 중… 인터넷 연결을 확인해 주세요"} · 반 코드 ${esc(p.room||"")}</div>`
-   :`<div class="panel stack"><label class="f" for="code" style="flex:none">선생님 화면의 열쇠 코드 3자리</label>
-    <div class="codebox"><input id="code" inputmode="numeric" maxlength="3" autocomplete="off" value=""><button class="btn" id="open">열기</button></div></div>`;
-  let body="";const cur=current();CK=cur?cur.key:null;
-  if(cur){const s=ITEMS[cur.idx];document.documentElement.style.setProperty("--stage",`var(${s.stage.c})`);
-    const w=writerOf(CK,p.grp,p.size),me=w===p.num,r=S.res[CK];
-    if(cur.reveal){let en=slotHTML(s,"en",true);if(s.fix){const fw=esc(s.fix.w[0]);en=en.replace(fw,`<s>${fw}</s> <mark>${esc(s.fix.r[0])}</mark>`)}
-      body=`<div class="card"><div class="no"><span class="lv">${s.stage.n}단계 · ${esc(s.stage.title)}</span><span>${label(s)}</span><span>정답 공개</span></div>
-       ${me&&r&&r.done?resultHTML(s,r):""}<div class="en">${en}</div>${s.ex?`<div class="ex">${slotHTML(s,"ex",true)}</div>`:""}${s.ko?`<div class="ko">${slotHTML(s,"ko",true)}</div>`:""}${s.tip?`<div class="hint">${esc(s.tip)}</div>`:""}</div>`;
-      $("#app").innerHTML=head+`<div class="stack">${codeUI}${body}</div>`;bindStudent();return}
-    body=`<div class="card">
-      <div class="no"><span class="lv">${s.stage.n}단계 · ${esc(s.stage.title)}</span><span>${label(s)}</span>${s.star?'<span class="star">★ 핵심 문장</span>':""}</div>
-      <div class="role ${me?"me":"other"}">${me?"✏️ 이번 문장은 내가 입력 담당! 모둠과 상의해서 입력하세요.":`${w}번 친구가 입력 담당이에요. 같이 답을 정해 주세요.`}</div>
-      <div class="en">${tpl(s,"en",me,r)}</div>
-      ${s.fix?fixHTML(s,me,r):""}
-      ${s.ex?`<div class="ex">${tpl(s,"ex",me,r)}</div>`:""}
-      ${s.ko?`<div class="ko">${tpl(s,"ko",me,r)}</div>`:""}
-      ${me?resultHTML(s,r):""}
-    </div>`}
-  else{document.documentElement.style.setProperty("--stage","var(--s1)");
-    body=LIVE?`<div class="panel"><p>선생님이 수업을 시작하면 문장이 자동으로 나타나요. 모둠마다 한 명의 화면에서만 입력칸이 열립니다.</p></div>`
-     :`<div class="panel"><p>선생님이 화면에 <b>열쇠 코드</b>를 띄우면 위에 입력하세요. 코드를 넣으면 모두 같은 문장이 열리고, 모둠마다 한 명의 화면에서만 입력칸이 열려요.</p></div>`}
-  $("#app").innerHTML=head+`<div class="stack">${codeUI}${body}</div>`;
+  const conn=!HAS_PEER?`<div class="conn bad">연결 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</div>`
+    :sOk?`<div class="note">● 선생님 화면과 연결됨 · 선생님이 넘기면 화면이 같이 바뀌어요</div>`
+    :`<div class="conn">${sWhy?esc(sWhy):sEver?"연결이 잠깐 끊겼어요. 다시 연결하는 중… (하던 것은 그대로 남아 있어요)":"선생님 화면에 연결하는 중…"} <button class="btn ghost small" id="retry">지금 다시 연결</button></div>`;
+  const cur=current();CK=cur?cur.key:null;let body;
+  if(!cur){document.documentElement.style.setProperty("--stage","var(--s1)");
+    body=`<div class="panel"><p>선생님이 수업을 시작하면 문장이 자동으로 나타나요.</p></div>`}
+  else{const pg=PAGES[cur.page];setStage(first(cur.page));body=pg.see?seeStudent(pg,cur):quizStudent(first(cur.page),cur)}
+  $("#app").innerHTML=head+`<div class="stack">${conn}${body}</div>`;
   bindStudent();
 }
-function tpl(s,part,me,r){const locked=!me||(r&&r.done);let i=0;
-  return parse(s[part]).map(seg=>{if(!seg.k)return esc(seg.t);const key=`${s.id}-${part}-${i++}`;const v=S.val[CK+"|"+key]||"";
-    const mark=r&&r.done?(r.ok?"good":""):"";
-    if(seg.k==="ch")return `<span class="choice">${seg.opts.map(o=>`<button type="button" class="opt ${v===o?"sel":""}" data-key="${key}" data-v="${esc(o)}" ${locked?"disabled":""}>${esc(o)}</button>`).join("")}</span>`;
-    const w=Math.max(4,Math.max(...seg.ans.map(a=>a.length))+1);
-    const inp=`<input class="blank ${mark}" id="i-${key}" data-key="${key}" size="${w}" value="${esc(locked&&!me?"":v)}" autocomplete="off" autocapitalize="off" spellcheck="false" ${locked?"disabled":""} aria-label="빈칸">`;
-    return seg.k==="fm"?`<span class="form"><em>(${esc(seg.base)})</em>${inp}</span>`:inp}).join("")}
-function fixHTML(s,me,r){const locked=!me||(r&&r.done);const g=k=>esc(me?S.val[CK+"|"+k]||"":"");
-  return `<div class="fixrow">틀린 곳 고치기: <input class="t" id="i-${s.id}-fw" data-key="${s.id}-fw" placeholder="틀린 부분" value="${g(s.id+"-fw")}" ${locked?"disabled":""}> → <input class="t" id="i-${s.id}-fr" data-key="${s.id}-fr" placeholder="고친 것" value="${g(s.id+"-fr")}" ${locked?"disabled":""}></div>`}
-function resultHTML(s,r){
-  const g=S.profile.grp;
-  if(r&&r.done)return r.ok?`<div class="result ok"><small style="font-size:1.6rem;margin:0 0 6px">${g}모둠</small>✅ +${r.pts}<small>${r.tries===1?"한 번에 정답!":"두 번째에 정답!"} ${LIVE?"선생님 화면에 반영됐어요.":"화면을 들어 선생님께 보여 주세요."}</small></div>`
-    :`<div class="result no"><small style="font-size:1.6rem;margin:0 0 6px">${g}모둠</small>❌ 0점<small>두 번 모두 틀렸어요. 선생님의 정답 공개를 기다려요.</small></div>`;
-  return `<div class="row"><button class="btn" id="submit">${r&&r.tries===1?"다시 제출 (마지막 기회, 1점)":"제출하기"}</button>${r&&r.tries===1?'<span class="note" style="color:var(--bad)">틀린 곳이 있어요. 모둠과 다시 상의하세요.</span>':'<span class="note">한 번에 맞히면 2점, 두 번째에 맞히면 1점</span>'}</div>`}
+function seeStudent(pg,cur){
+  return `<div class="note">👀 확인 문장 · 선생님이 답을 열면 여기에도 나타나요. 학습지에 빨간 펜으로 고쳐요.</div>`+pg.items.map(i=>seeCard(ITEMS[i],{reveal:cur.reveal,open:cur.open})).join("")}
+function quizStudent(s,cur){const r=S.res[CK],lv=S.lv[CK],done=!!(r&&r.done);
+  const no=`<div class="no"><span class="lv">${s.stage.n}단계 · ${esc(s.stage.title)}</span><span>${label(s)}</span>${s.star?'<span class="star">★ 핵심 문장</span>':""}${cur.talkOn?'<span class="star">🎤 설명 문장</span>':""}</div>`;
+  if(cur.reveal){let en=slotHTML(s,"en",{reveal:true});if(s.fix)en=fixReveal(en,s);
+    const tipOn=s.tip&&(cur.tip||!cur.talkOn);
+    const res=done?resultHTML(r):`<div class="note">${r&&r.tries?"두 번째 제출 전에 정답이 공개됐어요.":"제출하지 않은 문장이에요."} 정답을 보고 학습지를 고쳐요.</div>`;
+    return `<div class="card">${no}${res}<div class="en">${en}</div>${s.ex?`<div class="ex">${slotHTML(s,"ex",{reveal:true})}</div>`:""}${s.ko?`<div class="ko">${slotHTML(s,"ko",{reveal:true})}</div>`:""}${talkHTML(s,cur)}${tipOn?`<div class="hint">${esc(s.tip)}</div>`:""}</div>`}
+  const lvLock=!!(r&&r.tries);
+  const seat=seatsLeft(cur);
+  const pick=`<div class="lvpick" role="group" aria-label="수준 고르기">${[3,2,1].map(n=>{const left=seat?seat[n]:null,full=left!=null&&left<=0&&lv!==n;return `<button type="button" data-lv="${n}" class="${lv===n?"sel":""}" ${lvLock||full?"disabled":""} aria-pressed="${lv===n}"><b>${LV[n].n}</b><span>${LV[n].d} · ${PTS[n][0]}점</span><span>${lv===n?"내 수준":left==null?"":full?"마감":`${left}자리 남음`}</span></button>`}).join("")}</div>`;
+  if(!lv)return `<div class="card">${no}<div class="role other">이 문장에 도전할 수준을 먼저 고르세요. 모둠 안에서 수준마다 자리 수가 정해져 있어요. 첫 제출 뒤에는 바꿀 수 없어요.</div>${pick}<div class="en">${slotHTML(s,"en",{})}</div></div>`;
+  return `<div class="card">${no}${pick}
+    <div class="en">${qTpl(s,"en",lv,done)}</div>
+    ${s.fix?fixHTML(s,lv,done):""}
+    ${s.ex?`<div class="ex">${qTpl(s,"ex",lv,done)}</div>`:""}
+    ${s.ko?`<div class="ko">${qTpl(s,"ko",lv,done)}</div>`:""}
+    ${done?resultHTML(r):submitHTML(r,lv)}</div>`}
+function ddHTML(key,opts,dis){const v=S.val[CK+"|"+key]||"";
+  return `<select class="dd" id="i-${key}" data-key="${key}" ${dis} aria-label="답 고르기"><option value="">고르기 ▾</option>${opts.map(o=>`<option value="${esc(o)}" ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select>`}
+function blankHTML(seg,key,lv,locked){const dis=locked?"disabled":"";const V=k=>esc(S.val[CK+"|"+k]||"");
+  const inp=(k,len)=>`<input class="blank" id="i-${k}" data-key="${k}" size="${Math.max(3,len+1)}" value="${V(k)}" autocomplete="off" autocapitalize="off" spellcheck="false" ${dis} aria-label="빈칸">`;
+  const base=seg.k==="fm"?`<em>(${esc(seg.base)})</em>`:"";let body;
+  if(lv===3)body=inp(key,Math.max(...seg.ans.map(a=>a.length)));
+  else if(lv===2){const w=seg.ans[0].split(" ");
+    if(w.length===1)body=`<b class="given">${esc(w[0][0])}</b>${inp(key,w[0].length-1)}`;
+    else{const g=givenIdx(w);body=w.map((x,j)=>j===g?`<b class="given">${esc(x)}</b>`:inp(key+"~"+j,x.length)).join(" ")}}
+  else body=ddHTML(key,seg.k==="ch"?seg.opts:shuf([seg.ans[0],...seg.d],key),dis);
+  return `<span class="form">${base}${body}</span>`}
+function qTpl(s,part,lv,locked){let i=0;const wm=lv!==3&&s.fix&&part==="en"?esc(s.fix.w[0]):null;let marked=false;
+  return parse(s[part]).map(seg=>{
+    if(!seg.k){let t=esc(seg.t);if(wm&&!marked&&t.includes(wm)){t=t.replace(wm,`<span class="wrong">${wm}</span>`);marked=true}return t}
+    const key=`${s.id}-${part}-${i++}`;
+    if(seg.k==="ch"&&part!=="en"){const v=S.val[CK+"|"+key]||"";
+      return `<span class="choice">${seg.opts.map(o=>`<button type="button" class="opt ${v===o?"sel":""}" data-key="${key}" data-v="${esc(o)}" ${locked?"disabled":""}>${esc(o)}</button>`).join("")}</span>`}
+    return blankHTML(seg,key,lv,locked)}).join("")}
+function fixHTML(s,lv,locked){const dis=locked?"disabled":"";const V=k=>esc(S.val[CK+"|"+k]||"");const fw=s.id+"-fw",fr=s.id+"-fr";
+  if(lv===3)return `<div class="fixrow">틀린 곳 한 곳 고치기: <input class="t" id="i-${fw}" data-key="${fw}" placeholder="틀린 부분" value="${V(fw)}" ${dis}> → <input class="t" id="i-${fr}" data-key="${fr}" placeholder="고친 것" value="${V(fr)}" ${dis}></div>`;
+  const right=lv===2?`<input class="t" id="i-${fr}" data-key="${fr}" placeholder="고친 것" value="${V(fr)}" ${dis}>`:ddHTML(fr,shuf([s.fix.r[0],...(s.fix.d||[])],fr),dis);
+  return `<div class="fixrow">물결 친 <span class="wrong">${esc(s.fix.w[0])}</span> 을(를) 고치면 → ${right}</div>`}
+function submitHTML(r,lv){const P=PTS[lv];
+  return `<div class="row"><button class="btn" id="submit">${r&&r.tries===1?`다시 제출 (마지막 기회, ${P[1]}점)`:"제출하기"}</button>${r&&r.tries===1?'<span class="note" style="color:var(--bad)">빨간 칸을 다시 확인하세요.</span>':`<span class="note">한 번에 맞히면 ${P[0]}점, 두 번째에 맞히면 ${P[1]}점</span>`}</div>`}
+function resultHTML(r){if(!r||!r.done)return "";const n=(LV[r.lv]||LV[3]).n;
+  return r.ok?`<div class="result ok">✅ +${r.pts}<small>${n} 수준 · ${r.tries===1?"한 번에 정답!":"두 번째에 정답!"} 모둠 점수에 반영돼요.</small></div>`
+    :`<div class="result no">❌ 0점<small>${n} 수준 · 두 번 모두 틀렸어요. 정답 공개를 기다려요.</small></div>`}
+function talkHTML(s,cur){const p=S.profile;let out="";
+  if(cur.talkOn){const t=cur.talk&&cur.talk["g"+p.grp];
+    if(t&&+t.n===p.num)out=`<div class="talkbox me">🎤 내가 설명할 차례! 모둠 친구들에게 설명해 주세요.<div class="frame">정답은 <b>________</b> 이다. 왜냐하면 <b>________</b> 때문이다.</div>${s.key?`<div class="kw">힌트: ${s.key.map(esc).join(" · ")}</div>`:""}</div>`;
+    else if(t)out=`<div class="talkbox">🎤 설명 담당: ${t.n}번 ${esc(t.nm||"")} · 잘 듣고 학습지에 이유를 한 줄 적어요.</div>`}
+  if(cur.pick)out+=`<div class="talkbox ${+cur.pick===p.grp?"me":""}">📢 ${+cur.pick===p.grp?"우리 모둠이 반 전체에 발표해요!":`${cur.pick}모둠이 반 전체에 발표해요. 잘 들어 봐요.`}</div>`;
+  return out}
+let BAD=new Set();
 function bindStudent(){
-  const ci=$("#code");if(ci){const go=()=>{const c=ci.value.replace(/\D/g,"");if(c.length!==3){toast("숫자 3자리를 입력하세요");return}S.code=c;saveS();render()};
-  $("#open").onclick=go;ci.onkeydown=e=>{if(e.key==="Enter")go()}}
   $("#edit").onclick=()=>{$("#chg").innerHTML=`<span class="confirm">정보를 다시 입력할까요? <button class="btn small" id="y">네</button><button class="btn ghost small" id="n">취소</button></span>`;
-    $("#y").onclick=()=>{S.profile=null;saveS();render()};$("#n").onclick=render};
-  document.querySelectorAll("input[data-key]").forEach(inp=>inp.oninput=()=>{S.val[CK+"|"+inp.dataset.key]=inp.value;inp.classList.remove("bad");saveSoon()});
-  document.querySelectorAll(".opt[data-key]").forEach(b=>b.onclick=()=>{S.val[CK+"|"+b.dataset.key]=b.dataset.v;b.parentElement.querySelectorAll(".opt").forEach(x=>{x.classList.toggle("sel",x===b);x.classList.remove("bad")});saveSoon()});
+    $("#y").onclick=()=>{S.profile=null;saveS();if(sPeer){try{sPeer.destroy()}catch(e){}}sPeer=null;sOk=false;clearTimeout(sTimer);render()};$("#n").onclick=render};
+  const rt=$("#retry");if(rt)rt.onclick=()=>{sRetry=0;sWhy="";studentConnect();render()};
+  document.querySelectorAll("[data-lv]").forEach(b=>b.onclick=()=>{if(!sOk){toast("선생님 화면과 연결된 뒤에 고를 수 있어요");return}BAD=new Set();sSend({t:"claim",seed:CK,lv:+b.dataset.lv})});
+  document.querySelectorAll("input[data-key]").forEach(inp=>inp.oninput=()=>{S.val[CK+"|"+inp.dataset.key]=inp.value;inp.classList.remove("bad");BAD.delete(inp.dataset.key);saveSoon()});
+  document.querySelectorAll("select[data-key]").forEach(sel=>sel.onchange=()=>{S.val[CK+"|"+sel.dataset.key]=sel.value;sel.classList.remove("bad");BAD.delete(sel.dataset.key);saveSoon()});
+  document.querySelectorAll(".opt[data-key]").forEach(b=>b.onclick=()=>{S.val[CK+"|"+b.dataset.key]=b.dataset.v;BAD.delete(b.dataset.key);b.parentElement.querySelectorAll(".opt").forEach(x=>{x.classList.toggle("sel",x===b);x.classList.remove("bad")});saveSoon()});
+  BAD.forEach(k=>{const el=document.getElementById("i-"+k);if(el)el.classList.add("bad");else{const b=document.querySelector(`.opt.sel[data-key="${k}"]`);if(b)b.classList.add("bad")}});
   const sb=$("#submit");if(sb)sb.onclick=submit;
 }
 let sT=null;function saveSoon(){clearTimeout(sT);sT=setTimeout(saveS,400)}
-/* 현재 문장: 실시간이면 선생님 상태, 아니면 열쇠 코드 */
-let CK=null,liveState=null,liveOk=false,liveES=null;
-function current(){if(LIVE){const st=liveState;if(!st||st.idx==null||!st.seed||st.idx<0||st.idx>=N)return null;return{key:st.seed,idx:st.idx,reveal:!!st.reveal}}
-  if(S.code==null)return null;return{key:S.code,idx:itemOfCode(S.code),reveal:false}}
-function startStudentLive(){if(!LIVE||!S.profile||liveES||location.hash==="#teacher")return;const p=S.profile;
-  fput(`rooms/${p.room}/members/g${p.grp}n${p.num}`,{grp:p.grp,num:p.num,size:p.size,name:p.name||"",t:Date.now()});
-  let last="",lastSeed=null;liveES=fwatch(`rooms/${p.room}/state`,(tree,ok)=>{liveOk=ok;liveState=tree&&typeof tree==="object"?tree:null;
-    const sig=JSON.stringify(liveState)+"|"+ok;if(sig===last)return;last=sig;const seed=liveState&&liveState.seed;render();if(seed!==lastSeed){lastSeed=seed;scrollTo(0,0)}})}
-function submit(){const s=ITEMS[current().idx];const its=itemsOf(s);
-  if(its.some(it=>!String(S.val[CK+"|"+it.key]||"").trim())){toast("모든 칸을 채워 주세요");return}
-  let all=true;its.forEach(it=>{const v=S.val[CK+"|"+it.key];const ok=it.k==="ch"?it.ans.includes(v):it.ans.some(a=>norm(a)===norm(v));if(!ok)all=false;it._ok=ok});
-  const r=S.res[CK]||{tries:0};r.tries++;
-  if(all){r.done=1;r.ok=1;r.pts=r.tries===1?2:1}else if(r.tries>=2){r.done=1;r.ok=0;r.pts=0}
-  S.res[CK]=r;saveS();render();
-  if(LIVE){const p=S.profile;fput(`rooms/${p.room}/subs/${CK}/g${p.grp}`,{num:p.num,tries:r.tries,done:r.done?1:0,ok:r.ok?1:0,pts:r.pts||0,t:Date.now()})}
-  if(!r.done){its.forEach(it=>{if(it._ok)return;if(it.k==="ch"){const b=[...document.querySelectorAll(`.opt[data-key="${it.key}"]`)].find(b=>b.dataset.v===S.val[CK+"|"+it.key]);if(b)b.classList.add("bad")}else{const el=document.getElementById("i-"+it.key);if(el)el.classList.add("bad")}})}
+/* 현재 화면 = 선생님 화면이 보내 준 상태 */
+let CK=null;
+/* 내 모둠에 수준별로 남은 자리 (제한이 꺼져 있으면 null) */
+function seatsLeft(cur){if(!cur.caps||!S.profile)return null;const p=S.profile,me=mkey(p.grp,p.num),cap=cur.caps["g"+p.grp];if(!cap)return null;
+  const used={3:0,2:0,1:0};Object.entries(cur.cl||{}).forEach(([k,v])=>{const m=/^g([0-9]+)n([0-9]+)$/.exec(k);if(m&&+m[1]===p.grp&&k!==me&&used[v]!=null)used[v]++});
+  return{3:cap[3]-used[3],2:cap[2]-used[2],1:cap[1]-used[1]}}
+function current(){const st=liveState;if(!st||st.page==null||!st.seed||st.page<0||st.page>=NP)return null;
+  return{key:st.seed,page:st.page,reveal:!!st.reveal,open:st.open||{},talk:st.talk||null,talkOn:!!st.talkOn,tip:!!st.tip,pick:st.pick||null,cl:st.cl||{},caps:st.caps||null}}
+function submit(){const cur=current();if(!cur||cur.reveal)return;const s=first(cur.page);const lv=S.lv[CK];if(!lv){toast("수준을 먼저 고르세요");return}
+  const V=k=>String(S.val[CK+"|"+k]||"").trim();
+  const checks=unitsOf(s).map(x=>{const keys=!x.lev||lv!==2?[x.key]:(()=>{const w=x.seg.ans[0].split(" ");if(w.length===1)return [x.key];const g=givenIdx(w);return w.map((_,j)=>x.key+"~"+j).filter((_,j)=>j!==g)})();
+    return{keys,ok:()=>x.lev?gradeSeg(x.seg,x.key,lv):x.seg.ans.includes(V(x.key))}});
+  if(s.fix){const fw=s.id+"-fw",fr=s.id+"-fr";
+    if(lv===3)checks.push({keys:[fw],ok:()=>s.fix.w.some(a=>norm(a)===norm(V(fw)))});
+    checks.push({keys:[fr],ok:()=>lv===1?s.fix.r.includes(V(fr)):s.fix.r.some(a=>norm(a)===norm(V(fr)))})}
+  if(checks.some(c=>c.keys.some(k=>!V(k)))){toast("모든 칸을 채워 주세요");return}
+  BAD=new Set();let all=true;checks.forEach(c=>{if(!c.ok()){all=false;c.keys.forEach(k=>BAD.add(k))}});
+  const r=S.res[CK]||{tries:0};r.tries++;r.lv=lv;r.room=S.profile.room;
+  if(all){r.done=1;r.ok=1;r.pts=PTS[lv][r.tries-1]}else if(r.tries>=2){r.done=1;r.ok=0;r.pts=0}
+  if(r.done)BAD=new Set();
+  S.res[CK]=r;saveS();render();sendSub(CK);
 }
+function gradeSeg(seg,key,lv){const V=k=>S.val[CK+"|"+k]||"";const A=seg.ans.map(norm);
+  if(lv===1)return seg.ans.includes(V(key));
+  if(lv===2){const w=seg.ans[0].split(" ");
+    if(w.length===1){const v=norm(V(key));return A.includes(v)||A.includes(norm(w[0][0]+v))}
+    const g=givenIdx(w);return A.includes(norm(w.map((x,j)=>j===g?x:V(key+"~"+j)).join(" ")))}
+  return A.includes(norm(V(key)))}
 function renderSetup(){document.documentElement.style.setProperty("--stage","var(--s1)");
   const opt=(n,sel)=>Array.from({length:n},(_,i)=>`<option ${sel===i+1?"selected":""}>${i+1}</option>`).join("");
+  const qc=(new URLSearchParams(location.search).get("c")||"").replace(/\D/g,"").slice(0,4);
   $("#app").innerHTML=`<div class="top"><h1>관용구 리딩 미션</h1></div>
   <div class="panel stack">
-    <p>모두 같은 문장을 보고, 모둠마다 <b>한 명만</b> 정답을 입력해요. 입력 담당은 문장마다 랜덤으로 바뀝니다.</p>
-    ${LIVE?`<label class="f">반 코드 (선생님이 알려 준 영어 소문자·숫자, 예: 3-2)<input class="t" id="s-room" maxlength="20" autocomplete="off" autocapitalize="off" placeholder="예: 3-2"></label>`:""}
+    ${sWhy?`<div class="conn bad">${esc(sWhy)}</div>`:""}
+    <p>문제 문장은 <b>각자</b> 상·중·하 중에서 수준을 골라 풀어요. 내 점수가 모여 <b>모둠 평균 점수</b>가 돼요.</p>
+    <label class="f">입장 코드 (선생님 화면의 숫자 4자리)<input class="t code4" id="s-room" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="0000" value="${esc(qc)}"></label>
     <div class="row">
       <label class="f">모둠 <select id="s-grp">${opt(8,1)}</select></label>
-      <label class="f">모둠 인원 <select id="s-size">${[3,4,5].map(n=>`<option ${n===4?"selected":""}>${n}</option>`).join("")}</select></label>
-      <label class="f">모둠 안 내 번호 <select id="s-num">${opt(5,1)}</select></label>
+      <label class="f">모둠 안 내 번호 <select id="s-num">${opt(6,1)}</select></label>
     </div>
     <label class="f">이름 <input class="t" id="s-name" maxlength="20" placeholder="예: 김민준"></label>
-    <p class="note">모둠원 모두 같은 '모둠 인원'을 고르고, 내 번호는 1번부터 겹치지 않게 정하세요.</p>
-    <div><button class="btn" id="s-go">시작하기</button></div>
+    <p class="note">모둠 안에서 내 번호는 1번부터 겹치지 않게 정하세요.</p>
+    <div><button class="btn" id="s-go">입장하기</button></div>
   </div>`;
-  $("#s-go").onclick=()=>{const size=+$("#s-size").value,num=+$("#s-num").value;
-    if(num>size){toast(`내 번호는 1~${size} 사이로 골라 주세요`);return}
-    let room="";if(LIVE){room=$("#s-room").value.trim().toLowerCase();if(!roomOk(room)){toast("반 코드를 확인해 주세요 (영어 소문자, 숫자, -)");return}}
-    S.profile={room,grp:+$("#s-grp").value,size,num,name:$("#s-name").value.trim()};saveS();if(liveES){liveES.close();liveES=null}startStudentLive();render()};
+  $("#s-go").onclick=()=>{const room=$("#s-room").value.replace(/\D/g,"");if(!roomOk(room)){toast("입장 코드 숫자 4자리를 입력하세요");return}
+    const name=$("#s-name").value.trim();if(!name){toast("이름을 입력하세요");return}
+    S.profile={room,grp:+$("#s-grp").value,num:+$("#s-num").value,name};saveS();sWhy="";sEver=false;sRetry=0;liveState=null;lastSeed=null;studentConnect();render()};
 }
 
+/* ================== 선생님: 방 열기 (이 화면이 서버 역할) ================== */
+let hPeer=null,hOk=false,hErr="",hTry=0,hTimer=null;const hConns=new Set();
+const seedOf=pg=>{const r=rs();return r.seeds[pg]||(r.seeds[pg]=rid())};
+function hostOpen(){if(hPeer||!HAS_PEER)return;clearTimeout(hTimer);if(!T.room){T.room=newRoom();saveT()}
+  const code=T.room;const peer=new Peer(PREFIX+code);hPeer=peer;
+  peer.on("open",()=>{if(hPeer!==peer)return;hOk=true;hErr="";hTry=0;rs().opened=1;saveT();renderSoon()});
+  peer.on("connection",conn=>{conn.on("data",d=>onHostData(conn,d));const drop=()=>{hConns.delete(conn);pushSoon();renderSoon()};conn.on("close",drop);conn.on("error",drop)});
+  peer.on("disconnected",()=>{if(hPeer!==peer)return;hOk=false;renderSoon();setTimeout(()=>{if(hPeer===peer&&!peer.destroyed)try{peer.reconnect()}catch(e){}},1000)});
+  peer.on("close",()=>{if(hPeer!==peer)return;hPeer=null;hOk=false;renderSoon();hTimer=setTimeout(hostOpen,3000)});
+  peer.on("error",e=>{if(hPeer!==peer)return;const t=e&&e.type;
+    if(t==="unavailable-id"){try{peer.destroy()}catch(x){}hPeer=null;hOk=false;
+      if(!rs().opened){T.room=newRoom();saveT();hostOpen();return}           /* 처음 여는 코드가 이미 쓰이는 중 → 다른 코드로 */
+      hTry++;hErr=hTry<=10?"방을 다시 여는 중… (새로고침 직후에는 몇 초 걸려요)":"이 입장 코드를 다시 열지 못했어요. 다른 창에서 선생님 화면이 열려 있지 않은지 확인하거나, '새 입장 코드'를 눌러 주세요.";
+      if(hTry<=10)hTimer=setTimeout(hostOpen,3000);renderSoon();return}
+    if(t==="browser-incompatible"){hErr="이 브라우저에서는 연결 기능을 쓸 수 없어요. 크롬이나 엣지로 열어 주세요.";renderSoon();return}
+    if(peer.destroyed){hPeer=null;hOk=false;hErr="연결 서버에 다시 접속하는 중…";renderSoon();hTimer=setTimeout(hostOpen,3000)}});
+}
+function hostClose(){clearTimeout(hTimer);hConns.forEach(c=>{try{c.close()}catch(e){}});hConns.clear();if(hPeer){const p=hPeer;hPeer=null;try{p.destroy()}catch(e){}}hOk=false}
+function stateObj(){const s=first(T.page),quiz=!PAGES[T.page].see;
+  const caps={};if(quiz&&T.quota)for(let g=1;g<=8;g++)caps["g"+g]=capsOf(g);
+  return{page:T.page,seed:T.code,reveal:!!T.reveal,open:T.open||{},talkOn:quiz&&isTalk(s),talk:(quiz&&rs().talkBy[T.page])||null,tip:!!T.tip,pick:T.pick||null,
+    cl:(quiz&&rs().claims[T.code])||{},caps:quiz&&T.quota?caps:null}}
+/* 모둠 인원(지금 접속한 모둠원 수)에 맞는 수준별 자리 수 */
+function capsOf(g){const on=onlineKeys();const n=Math.min(6,Math.max(1,membersOf(g).filter(m=>on.has(mkey(m.grp,m.num))).length));return QUOTA[n]}
+let pT=null;const pushSoon=()=>{clearTimeout(pT);pT=setTimeout(pushState,300)};
+function pushState(){const m={t:"state",st:stateObj()};hConns.forEach(c=>{if(c.open)try{c.send(m)}catch(e){}})}
+function onHostData(conn,d){if(!d||typeof d!=="object")return;
+  if(d.t==="ping"){if(conn.open)try{conn.send({t:"pong"})}catch(e){}return}
+  if(d.t==="join"){const g=+d.grp,n=+d.num,name=String(d.name||"").slice(0,20);if(!(g>=1&&g<=8&&n>=1&&n<=6))return;const k=mkey(g,n);
+    const clash=[...hConns].find(c=>c!==conn&&c.open&&c._k===k&&c._nm!==name);
+    if(clash){try{conn.send({t:"err",msg:`${g}모둠 ${n}번은 이미 ${clash._nm||"다른 친구"}이(가) 쓰고 있어요. 번호를 확인해 주세요.`})}catch(e){}setTimeout(()=>{try{conn.close()}catch(e){}},500);return}
+    [...hConns].forEach(c=>{if(c!==conn&&c._k===k){hConns.delete(c);try{c.close()}catch(e){}}}); /* 같은 학생이 다시 들어옴 → 예전 연결 정리 */
+    conn._k=k;conn._nm=name;conn._g=g;conn._n=n;hConns.add(conn);rs().members[k]={grp:g,num:n,name};saveT();
+    try{conn.send({t:"state",st:stateObj()})}catch(e){}pushSoon();renderSoon();return}
+  if(d.t==="claim"&&conn._k){const lv=+d.lv,k=conn._k,g=conn._g,seed=T.code;const deny=msg=>{try{conn.send({t:"deny",msg});conn.send({t:"state",st:stateObj()})}catch(e){}};
+    if(!PTS[lv]||d.seed!==seed||PAGES[T.page].see)return deny("화면이 바뀌었어요. 다시 골라 주세요.");
+    if(T.reveal)return deny("정답이 공개된 뒤에는 고를 수 없어요.");
+    const cl=(rs().claims[seed]=rs().claims[seed]||{});if(cl[k]===lv){try{conn.send({t:"state",st:stateObj()})}catch(e){}return}
+    if((rs().subs[seed]||{})[k])return deny("첫 제출 뒤에는 수준을 바꿀 수 없어요.");
+    if(T.quota){const used=Object.entries(cl).filter(([kk,v])=>kk!==k&&v===lv&&kk.startsWith("g"+g+"n")).length;
+      if(used>=capsOf(g)[lv])return deny(`${LV[lv].n} 자리가 다 찼어요. 다른 수준을 골라 주세요.`)}
+    cl[k]=lv;saveT();pushState();renderSoon();return}
+  if(d.t==="sub"&&conn._k&&d.rec&&typeof d.seed==="string"&&Object.values(rs().seeds).includes(d.seed)){const r=d.rec;const lv=+((rs().claims[d.seed]||{})[conn._k]||r.lv);if(!PTS[lv])return;
+    const rec={grp:conn._g,num:conn._n,lv,tries:Math.min(2,+r.tries||1),done:r.done?1:0,ok:r.ok?1:0,pts:0};
+    if(rec.ok)rec.pts=PTS[lv][rec.tries-1]||0;  /* 점수는 선생님 화면이 다시 계산 */
+    const sub=rs().subs;(sub[d.seed]=sub[d.seed]||{})[conn._k]=rec;saveT();renderSoon()}
+}
+const onlineKeys=()=>new Set([...hConns].filter(c=>c.open&&c._k).map(c=>c._k));
+const membersOf=g=>Object.values(rs().members).filter(m=>m&&+m.grp===g);
+/* 설명자 뽑기: 지금 접속한 모둠원 중에서 돌아가며 (모두 한 번씩 하기 전에는 다시 안 뽑힘) */
+function pickTalk(again){const pg=T.page,r=rs(),prev=r.talkBy[pg]||{},out={},on=onlineKeys();
+  for(let g=1;g<=T.groups;g++){let mem=membersOf(g).filter(m=>on.has(mkey(m.grp,m.num))).map(m=>+m.num);if(!mem.length)mem=membersOf(g).map(m=>+m.num);if(!mem.length)continue;
+    const old=again&&prev["g"+g]?+prev["g"+g].n:null;let said=(r.said[g]||[]).filter(n=>n!==old);
+    let pool=mem.filter(n=>!said.includes(n)&&n!==old);
+    if(!pool.length){said=[];pool=mem.filter(n=>n!==old);if(!pool.length)pool=mem}
+    const n=pool[Math.floor(Math.random()*pool.length)];said.push(n);r.said[g]=said;
+    const m=r.members[mkey(g,n)];out["g"+g]={n,nm:(m&&m.name)||""}}
+  r.talkBy[pg]=out}
+function qrSVG(text,cell){if(typeof qrcode!=="function")return "";try{const q=qrcode(0,"M");q.addData(text);q.make();return q.createSvgTag({cellSize:cell,margin:2,scalable:true})}catch(e){return ""}}
+
 /* ================== 선생님 화면 (#teacher) ================== */
-function newCode(idx){let c;do{c=String(100+Math.floor(Math.random()*900))}while(itemOfCode(c)!==idx||c===T.code);return c}
-function slotHTML(s,part,reveal){return parse(s[part]).map(seg=>{if(!seg.k)return esc(seg.t);
-  if(reveal)return `<mark>${esc(seg.ans[0])}</mark>`;
-  if(seg.k==="ch")return `<span class="slot c">( ${seg.opts.map(esc).join(" / ")} )</span>`;
-  if(seg.k==="fm")return `<span class="slot">(${esc(seg.base)})</span>`;
-  return `<span class="slot">&nbsp;</span>`}).join("")}
-let tES=null,tRoomOn=null,tSubs={},tMembers={},tOk=false;
-function startTeacherLive(){if(!LIVE||!T.room||tRoomOn===T.room)return;if(tES){tES.close();tES=null}tRoomOn=T.room;tSubs={};tMembers={};
-  let t=null;tES=fwatch(`rooms/${T.room}`,(tree,ok)=>{tOk=ok;tSubs=(tree&&tree.subs)||{};tMembers=(tree&&tree.members)||{};clearTimeout(t);t=setTimeout(()=>{if(location.hash==="#teacher")renderTeacher()},150)});pushState()}
-function pushState(){if(LIVE&&T.room)fput(`rooms/${T.room}/state`,{idx:T.idx,seed:T.code,reveal:!!T.reveal,t:Date.now()})}
+let qrBig=false;
 function renderTeacher(){$("#app").className="wrap wide";
-  if(LIVE){if(!T.code||/^\d{3}$/.test(T.code)){T.code=rid();saveT()}}
-  else if(T.code==null||itemOfCode(T.code)!==T.idx){T.code=newCode(T.idx);saveT()}
-  if(LIVE&&T.room)startTeacherLive();
-  const s=ITEMS[T.idx];document.documentElement.style.setProperty("--stage",`var(${s.stage.c})`);
-  let en=slotHTML(s,"en",T.reveal);if(s.fix&&T.reveal){const w=esc(s.fix.w[0]);en=en.replace(w,`<s>${w}</s> <mark>${esc(s.fix.r[0])}</mark>`)}
-  const groups=Array.from({length:T.groups},(_,i)=>i+1);
-  const auto={};if(LIVE)Object.values(tSubs).forEach(byG=>{for(const k in byG){const g=k.replace(/^g/,"");auto[g]=(auto[g]||0)+(+byG[k].pts||0)}});
-  const total=g=>Math.max(0,(auto[g]||0)+(rs().score[g]||0));const max=Math.max(1,...groups.map(total));
-  const now=(LIVE&&tSubs[T.code])||{};
-  const joined=g=>Object.values(tMembers).filter(m=>+m.grp===g).length;
-  const status=g=>{const r=now["g"+g];if(!r)return `<span class="note">제출 전</span>`;if(r.done&&r.ok)return `<span style="color:var(--ok);font-weight:700">✅ +${r.pts}</span>`;if(r.done)return `<span style="color:var(--bad);font-weight:700">❌</span>`;return `<span style="color:var(--gold);font-weight:700">재도전</span>`};
-  const submitted=groups.filter(g=>now["g"+g]&&now["g"+g].done).length;
-  const top=LIVE?`<div class="bigcode"><div><div style="font-size:.85rem;opacity:.9">${T.room?`반 코드 · ${tOk?"연결됨":"연결 중…"}`:"반 코드를 먼저 정하세요"}</div><b style="letter-spacing:.08em">${esc(T.room||"—")}</b></div>
-      <div class="row"><span>${submitted}/${T.groups} 모둠 제출</span><button class="btn small" id="t-prev" ${T.idx===0?"disabled":""}>← 이전</button><button class="btn small" id="t-next" ${T.idx===N-1?"disabled":""}>다음 문장 →</button></div></div>`
-   :`<div class="bigcode"><div><div style="font-size:.85rem;opacity:.9">열쇠 코드</div><b>${T.code}</b></div>
-      <div class="row"><button class="btn small" id="t-prev" ${T.idx===0?"disabled":""}>← 이전</button><button class="btn small" id="t-next" ${T.idx===N-1?"disabled":""}>다음 문장 →</button></div></div>`;
+  if(!T.code){T.code=seedOf(T.page);saveT()}
+  const pg=PAGES[T.page],s=first(T.page),talk=isTalk(s);setStage(s);
+  const groups=Array.from({length:T.groups},(_,i)=>i+1);const on=onlineKeys();const R=rs();
+  /* 모둠 점수 = 모둠원 점수 합 ÷ 모둠원 수 + 선생님 보너스 */
+  const sum={},who={};Object.values(R.subs).forEach(bySeed=>{if(bySeed&&typeof bySeed==="object")Object.values(bySeed).forEach(x=>{if(!x||x.grp==null)return;const g=+x.grp;sum[g]=(sum[g]||0)+(+x.pts||0);(who[g]=who[g]||new Set()).add(+x.num)})});
+  const total=g=>{const n=Math.max(1,membersOf(g).length,who[g]?who[g].size:0);return Math.max(0,Math.round(((sum[g]||0)/n+(R.score[g]||0))*10)/10)};
+  const max=Math.max(1,...groups.map(total));
+  const now=R.subs[T.code]||{};const subsOf=g=>Object.values(now).filter(x=>x&&+x.grp===g);
+  const onIn=g=>membersOf(g).filter(m=>on.has(mkey(m.grp,m.num))).length;
+  const cl=R.claims[T.code]||{};
+  const status=g=>{const o=onIn(g);if(pg.see)return `${o}명 접속`;const sb=subsOf(g);
+    const lvc=[3,2,1].map(l=>{const c=Object.entries(cl).filter(([k,v])=>v===l&&k.startsWith("g"+g+"n")).length;return c?LV[l].n+c:""}).filter(Boolean).join(" ");
+    return `${sb.filter(x=>x.done).length}/${o}명 완료 · ✅${sb.filter(x=>x.ok).length}${lvc?" · "+lvc:""}`};
+  const doneAll=groups.reduce((a,g)=>a+subsOf(g).filter(x=>x.done).length,0),onAll=on.size;
+  const url=T.room?joinURL(T.room):"";const fileMode=location.protocol==="file:";
+  const navBtns=`<button class="btn small" id="t-prev" ${T.page===0?"disabled":""}>← 이전</button><button class="btn small" id="t-next" ${T.page===NP-1?"disabled":""}>다음 →</button>`;
+  const connLine=!HAS_PEER?"연결 도구를 불러오지 못했어요 (인터넷 확인 후 새로고침)":hOk?`입장 코드 · ● 열림 · ${onAll}명 접속`:(hErr||"방을 여는 중…");
+  const top=`<div class="bigcode"><div class="row" style="gap:14px"><button type="button" class="qrmini" id="t-qr" aria-label="QR 크게 보기">${qrSVG(url,3)}</button>
+      <div><div style="font-size:.85rem;opacity:.9">${esc(connLine)}</div><b>${esc(T.room||"—")}</b></div></div>
+      <div class="row">${pg.see?`<span>👀 확인 문장</span>`:`<span>${doneAll}/${onAll}명 완료</span>`}${navBtns}</div></div>
+      ${fileMode?`<div class="conn">지금은 컴퓨터 안의 파일로 열려 있어서 학생들이 QR로 들어올 수 없어요. 인터넷 주소(예: Vercel)로 열어 주세요.</div>`:""}`;
+  let main;
+  if(pg.see){
+    main=`<div class="note">👀 확인 문장 · 빈칸을 누르면 그 칸만 열려요 (학생 화면에도 같이 열려요).</div>
+      ${pg.items.map(i=>seeCard(ITEMS[i],{reveal:T.reveal,open:T.open,click:!T.reveal})).join("")}
+      <div class="row"><button class="btn" id="t-rev">${T.reveal?"모두 숨기기":"전체 공개"}</button>${Object.keys(T.open).length&&!T.reveal?'<button class="btn ghost small" id="t-close">연 칸 모두 닫기</button>':""}</div>`}
+  else{
+    let en=slotHTML(s,"en",{reveal:T.reveal});if(s.fix&&T.reveal)en=fixReveal(en,s);
+    const tipOn=T.reveal&&s.tip&&(T.tip||!talk);
+    const tb=R.talkBy[T.page]||{};
+    const talkPanel=T.reveal&&talk?`<div class="panel stack"><h3>🎤 모둠별 설명 담당</h3>
+      <div class="talklist">${groups.map(g=>{const t=tb["g"+g];return `<div><b>${g}모둠</b> ${t?`${t.n}번 ${esc(t.nm||"")}`:'<span class="note">접속한 학생 없음</span>'}</div>`}).join("")}</div>
+      <div class="row"><button class="btn small" id="t-tip">${T.tip?"해설 숨기기":"해설 보기"}</button><button class="btn ghost small" id="t-retalk">설명자 다시 뽑기</button><button class="btn ghost small" id="t-pick">발표 모둠 뽑기</button>${T.pick?`<b>📢 ${T.pick}모둠 발표</b>`:""}</div></div>`:"";
+    main=`<div class="card">
+      <div class="no"><span class="lv">${s.stage.n}단계 · ${esc(s.stage.title)}</span><span>${label(s)}</span>${s.star?'<span class="star">★ 핵심 문장</span>':""}<span>📝 각자 상·중·하로 풀기</span></div>
+      <div class="en">${en}</div>
+      ${s.fix&&!T.reveal?`<div class="note">틀린 곳 한 곳을 찾아 고치세요.</div>`:""}
+      ${s.ex?`<div class="ex">${slotHTML(s,"ex",{reveal:T.reveal})}</div>`:""}
+      ${s.ko?`<div class="ko">${slotHTML(s,"ko",{reveal:T.reveal})}</div>`:""}
+      ${tipOn?`<div class="hint">${esc(s.tip)}</div>`:""}
+      <div class="row"><button class="btn" id="t-rev">${T.reveal?"정답 숨기기":"정답 공개"}</button><button class="btn ghost small" id="t-talk" aria-pressed="${talk}">🎤 설명 문장: ${talk?"켜짐":"꺼짐"}</button></div>
+    </div>${talkPanel}`}
+  const nav=STAGES.map(sg=>`<span class="sep">${sg.n}단계 ${esc(sg.title)}</span>`+PAGES.map((p,i)=>{const f=first(i);if(f.stage!==sg)return "";const l=ITEMS[p.items[p.items.length-1]];
+      const lab=p.see&&p.items.length>1?`${f.id}–${l.id}`:`${f.id}`;
+      return `<button data-go="${i}" class="${i===T.page?"cur":""} ${R.seen.includes(i)?"seen":""} ${p.see?"see":""} ${!p.see&&isTalk(f)?"talk":""}" aria-label="${p.see?"확인 문장":"문제 문장"} ${lab}">${lab}</button>`}).join("")).join("");
   $("#app").innerHTML=`<div class="top"><h1>관용구 리딩 미션 · 선생님 화면</h1>
-   <div class="row">${LIVE?`<label class="f" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:6px">반 코드 <input class="t" id="t-room" style="width:8em" maxlength="20" value="${esc(T.room||"")}" placeholder="예: 3-2"></label><button class="btn small" id="t-room-go">적용</button>`:""}
-   <label class="f" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:6px">모둠 수 <select id="t-g" style="width:auto">${[4,5,6,7,8].map(n=>`<option ${n===T.groups?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
+   <div class="row"><label class="f" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:6px">모둠 수 <select id="t-g" style="width:auto">${[4,5,6,7,8].map(n=>`<option ${n===T.groups?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
   <div class="tgrid">
    <div class="stack proj">
     ${top}
-    <div class="card">
-      <div class="no"><span class="lv">${s.stage.n}단계 · ${esc(s.stage.title)}</span><span>${label(s)}</span>${s.star?'<span class="star">★ 핵심 문장</span>':""}</div>
-      <div class="en">${en}</div>
-      ${s.fix&&!T.reveal?`<div class="note">틀린 곳 한 곳을 찾아 고치세요.</div>`:""}
-      ${s.ex?`<div class="ex">${slotHTML(s,"ex",T.reveal)}</div>`:""}
-      ${s.ko?`<div class="ko">${slotHTML(s,"ko",T.reveal)}</div>`:""}
-      ${T.reveal&&s.tip?`<div class="hint">${esc(s.tip)}</div>`:""}
-      <div class="row"><button class="btn" id="t-rev">${T.reveal?"정답 숨기기":"정답 공개"}</button><button class="btn ghost small" id="t-new">${LIVE?"입력 담당 다시 뽑기":"코드 새로 만들기"}</button></div>
-    </div>
-    <div class="panel"><div class="nav">${STAGES.map(sg=>`<span class="sep">${sg.n}단계 ${esc(sg.title)}</span>`+ITEMS.map((it,i)=>it.stage===sg?`<button data-go="${i}" class="${i===T.idx?"cur":""} ${rs().seen.includes(i)?"seen":""}">${it.id}</button>`:"").join("")).join("")}</div></div>
+    ${main}
+    <div class="panel stack"><div class="nav">${nav}</div><div class="note">실선 = 📝 문제 문장 · 점선 = 👀 확인 문장 · 🎤 = 설명 문장</div></div>
    </div>
    <div class="stack">
-    <div class="panel stack"><h3>모둠 점수</h3>
+    <div class="panel stack"><h3>모둠 점수 <span class="note">(모둠원 평균 + 보너스)</span></h3>
      <div class="score">${groups.map(g=>{const v=total(g);return `<div class="sc ${v===max&&v>0?"lead":""}"><span class="g">${g}모둠</span>
-       ${LIVE?`<span class="note">${status(g)} · ${joined(g)}명 접속</span>`:`<span></span>`}
+       <span class="note">${status(g)}</span>
        <span class="pts">${v}</span>
-       <span class="bs" style="grid-column:1/-1">${LIVE?'<span class="note" style="margin-right:auto">점수 조정</span>':""}<button data-sc="${g}" data-d="2">+2</button><button data-sc="${g}" data-d="1">+1</button><button data-sc="${g}" data-d="-1" aria-label="${g}모둠 1점 빼기">−1</button></span>
+       <span class="bs" style="grid-column:1/-1"><span class="note" style="margin-right:auto">보너스</span><button data-sc="${g}" data-d="1">+1</button><button data-sc="${g}" data-d="-1" aria-label="${g}모둠 1점 빼기">−1</button></span>
        <span class="bar" style="grid-column:1/-1"><i style="width:${v/max*100}%"></i></span></div>`}).join("")}</div>
-     <span id="t-rs"><button class="btn ghost small" id="t-reset">${LIVE?"새 수업 시작 (기록·점수 지우기)":"점수 초기화"}</button></span>
+     <button class="btn ghost small" id="t-quota" aria-pressed="${!!T.quota}">모둠 안 수준 나누기: ${T.quota?"켜짐":"꺼짐"}</button>
+     <span class="note">${T.quota?"3명 상1·중1·하1 / 4명 상1·중2·하1 / 5명 상1·중2·하2 (지금 접속한 인원 기준)":"꺼짐: 학생마다 자유롭게 수준 선택"}</span>
+     <span id="t-rs"><button class="btn ghost small" id="t-reset">새 수업 시작 (기록·점수 지우기)</button></span>
+     <span id="t-nr"><button class="btn ghost small" id="t-newroom">새 입장 코드 (다른 반)</button></span>
     </div>
-    <div class="panel note">${LIVE?"진행: 다음 문장 → 학생 화면이 자동으로 바뀜 → 모둠 토의 → 담당 학생 제출 → 여기에 ✅/❌와 점수가 자동 반영 → 정답 공개 (학생 화면에도 정답이 보여요)"
-      :"진행: 문장 띄우기 → 코드 입력 → 모둠 토의 → 담당 학생 제출 → ✅ 화면 들어 보이기 → 정답 공개 → 점수 주기 (한 번에 정답 +2, 두 번째 정답 +1)"}</div>
+    <div class="panel note">학생 화면은 선생님이 <b>다음 →</b>을 눌러야 함께 넘어가요. <b>수업 중에는 이 화면을 닫지 마세요</b> (새로고침은 괜찮아요).<br>📝 문제: 각자 상·중·하로 풀기 → 완료 인원 확인 → 정답 공개 (🎤 문장은 모둠별 설명자가 자동으로 뽑혀요) → 모둠 안 설명 → 해설 보기<br>👀 확인: 빈칸을 눌러 하나씩 열거나 전체 공개 → 학습지 빨간 펜 수정<br>점수: 상 3·2점, 중 2·1점, 하 1·1점 (한 번에·두 번째)</div>
    </div>
-  </div>`;
-  const go=i=>{T.idx=i;T.code=LIVE?rid():newCode(i);T.reveal=false;if(!rs().seen.includes(i))rs().seen.push(i);saveT();pushState();render();scrollTo(0,0)};
-  $("#t-prev").onclick=()=>go(T.idx-1);$("#t-next").onclick=()=>go(T.idx+1);
+  </div>
+  ${qrBig?`<div class="overlay" id="t-ov"><div class="qrbig">${qrSVG(url,10)}<b>${esc(T.room||"")}</b><span>${esc(url)}</span><button class="btn" id="t-ovx">닫기</button></div></div>`:""}`;
+  const go=i=>{T.page=i;T.code=seedOf(i);T.reveal=false;T.open={};T.tip=false;T.pick=null;if(!rs().seen.includes(i))rs().seen.push(i);saveT();pushState();render();scrollTo(0,0)};
+  $("#t-prev").onclick=()=>go(T.page-1);$("#t-next").onclick=()=>go(T.page+1);
   document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(+b.dataset.go));
-  $("#t-rev").onclick=()=>{T.reveal=!T.reveal;saveT();pushState();render()};
-  $("#t-new").onclick=()=>{T.code=LIVE?rid():newCode(T.idx);saveT();pushState();render();toast(LIVE?"입력 담당을 다시 뽑았어요":"새 코드를 만들었어요. 입력 담당도 바뀝니다")};
+  const upd=()=>{saveT();pushState();render()};
+  $("#t-rev").onclick=()=>{T.reveal=!T.reveal;if(pg.see)T.open={};else if(T.reveal&&talk&&!rs().talkBy[T.page])pickTalk(false);upd()};
+  document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{const k=b.dataset.open;if(T.open[k])delete T.open[k];else T.open[k]=1;upd()});
+  const tc=$("#t-close");if(tc)tc.onclick=()=>{T.open={};upd()};
+  const tt=$("#t-talk");if(tt)tt.onclick=()=>{T.talkX[s.id]=!talk;if(!talk&&T.reveal&&!rs().talkBy[T.page])pickTalk(false);upd()};
+  const tp=$("#t-tip");if(tp)tp.onclick=()=>{T.tip=!T.tip;upd()};
+  const rt=$("#t-retalk");if(rt)rt.onclick=()=>{pickTalk(true);upd();toast("설명자를 다시 뽑았어요")};
+  const pk=$("#t-pick");if(pk)pk.onclick=()=>{let c=groups.filter(g=>onIn(g)>0);if(!c.length)c=groups.slice();if(c.length>1)c=c.filter(g=>g!==+T.pick);T.pick=c[Math.floor(Math.random()*c.length)];upd()};
+  $("#t-qr").onclick=()=>{qrBig=true;render()};
+  const ov=$("#t-ovx");if(ov){ov.onclick=()=>{qrBig=false;render()};$("#t-ov").onclick=e=>{if(e.target.id==="t-ov"){qrBig=false;render()}}}
+  $("#t-quota").onclick=()=>{T.quota=!T.quota;upd()};
   $("#t-g").onchange=e=>{T.groups=+e.target.value;saveT();render()};
-  const rg=$("#t-room-go");if(rg)rg.onclick=async()=>{const r=$("#t-room").value.trim().toLowerCase();if(!roomOk(r)){toast("반 코드는 영어 소문자, 숫자, - 로 20자 이내");return}
-    if(r===T.room){render();return}
-    let st=null;try{const res=await fetch(`${FB}/rooms/${r}/state.json`);st=await res.json()}catch(e){}
-    T.room=r;if(st&&st.idx!=null&&st.seed){T.idx=st.idx;T.code=st.seed;T.reveal=!!st.reveal}else{T.idx=0;T.code=rid();T.reveal=false}
-    if(!rs().seen.includes(T.idx))rs().seen.push(T.idx);saveT();render();toast(st&&st.seed?`${r}: ${label(ITEMS[T.idx])}부터 이어서 진행`:`반 코드 ${r} 새로 시작`)};
   document.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>{const g=b.dataset.sc;rs().score[g]=(rs().score[g]||0)+ +b.dataset.d;saveT();render()});
-  $("#t-reset").onclick=()=>{$("#t-rs").innerHTML=`<span class="confirm">${LIVE?"이 반의 제출 기록과 점수를 모두 지울까요?":"모든 모둠 점수를 0으로?"} <button class="btn small" id="ry">지우기</button><button class="btn ghost small" id="rn">취소</button></span>`;
-    $("#ry").onclick=async()=>{rs().score={};rs().seen=[T.idx];saveT();if(LIVE&&T.room){await fdel(`rooms/${T.room}/subs`);pushState()}render()};$("#rn").onclick=render};
+  $("#t-reset").onclick=()=>{$("#t-rs").innerHTML=`<span class="confirm">제출 기록과 점수를 모두 지울까요? <button class="btn small" id="ry">지우기</button><button class="btn ghost small" id="rn">취소</button></span>`;
+    $("#ry").onclick=()=>{const r=rs();r.score={};r.seen=[T.page];r.seeds={};r.said={};r.talkBy={};r.subs={};r.members={};r.claims={};
+      hConns.forEach(c=>{if(c.open&&c._k)r.members[c._k]={grp:c._g,num:c._n,name:c._nm}}); /* 지금 접속한 학생은 그대로 */
+      T.reveal=false;T.open={};T.tip=false;T.pick=null;T.code=seedOf(T.page);saveT();pushState();render()};$("#rn").onclick=render};
+  $("#t-newroom").onclick=()=>{$("#t-nr").innerHTML=`<span class="confirm">새 코드로 바꾸면 지금 학생들은 새 코드로 다시 들어와야 해요. 바꿀까요? <button class="btn small" id="ny">바꾸기</button><button class="btn ghost small" id="nn">취소</button></span>`;
+    $("#ny").onclick=()=>{hostClose();T.room=newRoom();T.page=0;T.reveal=false;T.open={};T.tip=false;T.pick=null;T.code=seedOf(0);if(!rs().seen.includes(0))rs().seen.push(0);saveT();hErr="";hTry=0;hostOpen();render()};$("#nn").onclick=render};
 }
-if(!rs().seen.includes(T.idx))rs().seen.push(T.idx);
-startStudentLive();
+
+/* ================== 시작 ================== */
+function start(){if(location.hash==="#teacher"){if(sPeer){try{sPeer.destroy()}catch(e){}sPeer=null}hostOpen();if(!rs().seen.includes(T.page))rs().seen.push(T.page)}
+  else{hostClose();if(S.profile&&roomOk(S.profile.room||"")&&!sPeer&&!sOk)studentConnect()}}
+start();
 render();
 </script>
 
