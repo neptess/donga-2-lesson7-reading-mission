@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
-<title>관용구 리딩 미션</title>
+<title>7과 Reading(Idioms)</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;600&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
@@ -343,7 +343,7 @@ function onState(st){liveState=st&&typeof st==="object"?st:null;const seed=liveS
 function renderStudent(){$("#app").className="wrap";
   if(!S.profile||!roomOk(S.profile.room||""))return renderSetup();
   const p=S.profile;
-  const head=`<div class="top"><div><h1>관용구 리딩 미션</h1><div class="who">${p.grp}모둠 · ${p.num}번 ${esc(p.name||"")} · 입장 코드 ${esc(p.room)}</div></div>
+  const head=`<div class="top"><div><h1>7과 Reading(Idioms)</h1><div class="who">${p.grp}모둠 · ${p.num}번 ${esc(p.name||"")} · 입장 코드 ${esc(p.room)}</div></div>
     <span id="chg"><button class="btn ghost small" id="edit">정보 바꾸기</button></span></div>`;
   const conn=!HAS_PEER?`<div class="conn bad">연결 도구를 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</div>`
     :sOk?`<div class="note">● 선생님 화면과 연결됨 · 선생님이 넘기면 화면이 같이 바뀌어요</div>`
@@ -457,7 +457,7 @@ function gradeSeg(seg,key,lv){const V=k=>S.val[CK+"|"+k]||"";const A=seg.ans.map
 function renderSetup(){document.documentElement.style.setProperty("--stage","var(--s1)");
   const opt=(n,sel)=>Array.from({length:n},(_,i)=>`<option ${sel===i+1?"selected":""}>${i+1}</option>`).join("");
   const qc=(new URLSearchParams(location.search).get("c")||"").replace(/\D/g,"").slice(0,4);
-  $("#app").innerHTML=`<div class="top"><h1>관용구 리딩 미션</h1></div>
+  $("#app").innerHTML=`<div class="top"><h1>7과 Reading(Idioms)</h1></div>
   <div class="panel stack">
     ${sWhy?`<div class="conn bad">${esc(sWhy)}</div>`:""}
     <p>문제 문장은 <b>각자</b> 상·중·하 중에서 수준을 골라 풀어요. 내 점수가 모여 <b>모둠 평균 점수</b>가 돼요.</p>
@@ -590,7 +590,7 @@ function renderTeacher(){$("#app").className="wrap wide docked";const cname=rs()
   const nav=STAGES.map(sg=>`<span class="sep">${sg.n}단계 ${esc(sg.title)}</span>`+PAGES.map((p,i)=>{const f=first(i);if(f.stage!==sg)return "";const l=ITEMS[p.items[p.items.length-1]];
       const lab=p.see&&p.items.length>1?`${f.id}–${l.id}`:`${f.id}`;
       return `<button data-go="${i}" class="${i===T.page?"cur":""} ${R.seen.includes(i)?"seen":""} ${p.see?"see":""} ${!p.see&&isTalk(f)?"talk":""}" aria-label="${p.see?"확인 문장":"문제 문장"} ${lab}">${lab}</button>`}).join("")).join("");
-  $("#app").innerHTML=`<div class="top"><h1>관용구 리딩 미션 · 선생님 화면</h1>
+  $("#app").innerHTML=`<div class="top"><h1>7과 Reading(Idioms) · 선생님 화면</h1>
    <div class="row"><label class="f" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:6px">반 <select id="t-cls" style="width:auto">${classList().map(([k,r])=>`<option value="${k}" ${k===T.room?"selected":""}>${esc(r.name||"이름 없는 반")} · ${k}</option>`).join("")}</select></label>
    <span id="t-cl" class="row" style="gap:6px"><button class="btn ghost small" id="t-rename">반 이름 바꾸기</button><button class="btn small" id="t-addcls">＋ 새 반</button></span>
    <label class="f" style="flex:0 0 auto;flex-direction:row;align-items:center;gap:6px">모둠 수 <select id="t-g" style="width:auto">${[4,5,6,7,8].map(n=>`<option ${n===T.groups?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
