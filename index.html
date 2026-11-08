@@ -398,7 +398,11 @@ function talkHTML(s,cur){const p=S.profile;let out="";
   if(cur.talkOn){const t=cur.talk&&cur.talk["g"+p.grp];
     if(t&&+t.n===p.num)out=`<div class="talkbox me">🎤 내가 설명할 차례! 모둠 친구들에게 설명해 주세요.<div class="frame">정답은 <b>________</b> 이다. 왜냐하면 <b>________</b> 때문이다.</div>${s.key?`<div class="kw">힌트: ${s.key.map(esc).join(" · ")}</div>`:""}</div>`;
     else if(t)out=`<div class="talkbox">🎤 설명 담당: ${t.n}번 ${esc(t.nm||"")} · 잘 듣고 학습지에 이유를 한 줄 적어요.</div>`}
-  if(cur.pick)out+=`<div class="talkbox ${+cur.pick===p.grp?"me":""}">📢 ${+cur.pick===p.grp?"우리 모둠이 반 전체에 발표해요!":`${cur.pick}모둠이 반 전체에 발표해요. 잘 들어 봐요.`}</div>`;
+  if(cur.pick){const pg=+cur.pick,pt=cur.talk&&cur.talk["g"+pg],who=pt?`${pt.n}번 ${esc(pt.nm||"")}`:"";
+    /* 발표자 = 뽑힌 모둠의 🎤 설명 담당 */
+    if(pg===p.grp&&pt&&+pt.n===p.num)out+=`<div class="talkbox me">📢 내가 반 전체 앞에서 발표해요! 모둠에서 설명한 대로 말해 보세요.</div>`;
+    else if(pg===p.grp)out+=`<div class="talkbox me">📢 우리 모둠 발표${who?`: ${who}`:""} · 옆에서 도와주세요!</div>`;
+    else out+=`<div class="talkbox">📢 반 전체 발표: ${pg}모둠${who?` ${who}`:""} · 잘 들어 봐요.</div>`}
   return out}
 let BAD=new Set();
 function bindStudent(){
@@ -568,7 +572,7 @@ function renderTeacher(){$("#app").className="wrap wide";const cname=rs().name||
     const tb=R.talkBy[T.page]||{};
     const talkPanel=T.reveal&&talk?`<div class="panel stack"><h3>🎤 모둠별 설명 담당</h3>
       <div class="talklist">${groups.map(g=>{const t=tb["g"+g];return `<div><b>${g}모둠</b> ${t?`${t.n}번 ${esc(t.nm||"")}`:'<span class="note">접속한 학생 없음</span>'}</div>`}).join("")}</div>
-      <div class="row"><button class="btn small" id="t-tip">${T.tip?"해설 숨기기":"해설 보기"}</button><button class="btn ghost small" id="t-retalk">설명자 다시 뽑기</button><button class="btn ghost small" id="t-pick">발표 모둠 뽑기</button>${T.pick?`<b>📢 ${T.pick}모둠 발표</b>`:""}</div></div>`:"";
+      <div class="row"><button class="btn small" id="t-tip">${T.tip?"해설 숨기기":"해설 보기"}</button><button class="btn ghost small" id="t-retalk">설명자 다시 뽑기</button><button class="btn ghost small" id="t-pick">발표 모둠 뽑기</button>${T.pick?`<b>📢 ${T.pick}모둠 발표${tb["g"+T.pick]?` · ${tb["g"+T.pick].n}번 ${esc(tb["g"+T.pick].nm||"")}`:""}</b>`:""}</div></div>`:"";
     main=`<div class="card">
       <div class="no"><span class="lv">${s.stage.n}단계 · ${esc(s.stage.title)}</span><span>${label(s)}</span>${s.star?'<span class="star">★ 핵심 문장</span>':""}<span>📝 각자 상·중·하로 풀기</span></div>
       <div class="en">${en}</div>
