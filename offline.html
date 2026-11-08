@@ -437,7 +437,10 @@ function gradeSeg(seg,key,lv){const V=k=>S.val[CK+"|"+k]||"";const A=seg.ans.map
   if(lv===1)return seg.ans.includes(V(key));
   if(lv===2){const w=seg.ans[0].split(" ");
     if(w.length===1){const v=norm(V(key));return A.includes(v)||A.includes(norm(w[0][0]+v))}
-    const g=givenIdx(w);return A.includes(norm(w.map((x,j)=>j===g?x:V(key+"~"+j)).join(" ")))}
+    const g=givenIdx(w);const joined=norm(w.map((x,j)=>j===g?x:V(key+"~"+j)).join(" "));
+    /* 주어진 단어를 칸에 또 쓴 경우(were were preparing)도 정답: 바로 이어서 겹친 단어는 하나로 */
+    const dedup=joined.split(" ").filter((x,j,a)=>j===0||x!==a[j-1]).join(" ");
+    return A.includes(joined)||A.includes(dedup)}
   return A.includes(norm(V(key)))}
 function renderSetup(){document.documentElement.style.setProperty("--stage","var(--s1)");
   const opt=(n,sel)=>Array.from({length:n},(_,i)=>`<option ${sel===i+1?"selected":""}>${i+1}</option>`).join("");
