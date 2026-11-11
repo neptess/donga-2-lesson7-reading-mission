@@ -122,6 +122,13 @@ mark{background:var(--hl);color:var(--ink);padding:0 3px;border-radius:4px;font-
 .sc .bs{display:flex;gap:4px;align-items:center}
 .sc .bs button{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:2px 8px;font-size:.85rem}
 .sc.lead{border-color:var(--gold)}
+.ros{grid-column:1/-1;display:flex;flex-direction:column;gap:2px;font-size:.85rem;border-top:1px dashed var(--line);padding-top:5px;line-height:1.5}
+.ros .rr{display:grid;grid-template-columns:4.6em minmax(0,1fr);gap:6px;align-items:baseline}
+.ros .lt{font-weight:700;white-space:nowrap}
+.ros .lt small{font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
+.ros .nm{display:inline-block;margin-right:10px;white-space:nowrap}
+.ros .off{opacity:.45;text-decoration:line-through}
+.ros .empty{color:var(--muted)}
 .bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--stage)}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.9rem}
@@ -556,8 +563,18 @@ function renderTeacher(){$("#app").className="wrap wide docked";const cname=rs()
   const onIn=g=>membersOf(g).filter(m=>on.has(mkey(m.grp,m.num))).length;
   const cl=R.claims[T.code]||{};
   const status=g=>{const o=onIn(g);if(pg.see)return `${o}명 접속`;const sb=subsOf(g);
-    const lvc=[3,2,1].map(l=>{const c=Object.entries(cl).filter(([k,v])=>v===l&&k.startsWith("g"+g+"n")).length;return c?LV[l].n+c:""}).filter(Boolean).join(" ");
-    return `${sb.filter(x=>x.done).length}/${o}명 완료 · ✅${sb.filter(x=>x.ok).length}${lvc?" · "+lvc:""}`};
+    return `${sb.filter(x=>x.done).length}/${o}명 완료 · ✅${sb.filter(x=>x.ok).length}`};
+  /* 모둠원 이름: 문제 문장에서는 상·중·하별로, 확인 문장에서는 접속한 학생만 */
+  const roster=g=>{const mem=membersOf(g).filter(m=>{const k=mkey(m.grp,m.num);return on.has(k)||(!pg.see&&cl[k])}).sort((a,b)=>a.num-b.num);
+    if(!mem.length)return "";
+    const chip=m=>{const k=mkey(m.grp,m.num),x=now[k],mk=pg.see||!x?"":x.ok?" ✅":x.done?" ❌":" ✏️";
+      return `<span class="nm ${on.has(k)?"":"off"}" title="${on.has(k)?"":"접속 끊김"}">${m.num}번 ${esc(m.name||"")}${mk}</span>`};
+    if(pg.see)return `<div class="ros">${mem.map(chip).join("")}</div>`;
+    const caps=T.quota?capsOf(g):null;
+    const row=(lab,list,cap)=>`<div class="rr"><b class="lt">${lab}${cap!=null?` <small>${list.length}/${cap}</small>`:""}</b><span>${list.length?list.map(chip).join(""):'<span class="empty">—</span>'}</span></div>`;
+    const rows=[3,2,1].map(l=>row(LV[l].n,mem.filter(m=>cl[mkey(m.grp,m.num)]===l),caps?caps[l]:null));
+    const wait=mem.filter(m=>!cl[mkey(m.grp,m.num)]);if(wait.length)rows.push(row("고르는 중",wait,null));
+    return `<div class="ros">${rows.join("")}</div>`};
   const doneAll=groups.reduce((a,g)=>a+subsOf(g).filter(x=>x.done).length,0),onAll=on.size;
   const url=T.room?joinURL(T.room):"";const fileMode=location.protocol==="file:";
   const navBtns=`<button class="btn small" id="t-prev" ${T.page===0?"disabled":""}>← 이전</button><button class="btn small" id="t-next" ${T.page===NP-1?"disabled":""}>다음 →</button>`;
@@ -606,10 +623,11 @@ function renderTeacher(){$("#app").className="wrap wide docked";const cname=rs()
      <div class="score">${groups.map(g=>{const v=total(g);return `<div class="sc ${v===max&&v>0?"lead":""}"><span class="g">${g}모둠</span>
        <span class="note">${status(g)}</span>
        <span class="pts">${v}</span>
+       ${roster(g)}
        <span class="bs" style="grid-column:1/-1"><span class="note" style="margin-right:auto">보너스</span><button data-sc="${g}" data-d="1">+1</button><button data-sc="${g}" data-d="-1" aria-label="${g}모둠 1점 빼기">−1</button></span>
        <span class="bar" style="grid-column:1/-1"><i style="width:${v/max*100}%"></i></span></div>`}).join("")}</div>
      <button class="btn ghost small" id="t-quota" aria-pressed="${!!T.quota}">모둠 안 수준 나누기: ${T.quota?"켜짐":"꺼짐"}</button>
-     <span class="note">${T.quota?"3명 상1·중1·하1 / 4명 상1·중2·하1 / 5명 상1·중2·하2 (지금 접속한 인원 기준)":"꺼짐: 자리 수 제한 없이 각자 상·중·하 중 하나를 골라요"}</span>
+     <span class="note">${T.quota?"3명 상1·중1·하1 / 4명 상1·중2·하1 / 5명 상1·중2·하2 / 6명 상2·중2·하2 (지금 접속한 인원 기준)":"꺼짐: 자리 수 제한 없이 각자 상·중·하 중 하나를 골라요"}</span>
      <span id="t-rs"><button class="btn ghost small" id="t-reset">새 수업 시작 (기록·점수 지우기)</button></span>
     </div>
     <div class="panel note">학생 화면은 선생님이 <b>다음 →</b>을 눌러야 함께 넘어가요. <b>수업 중에는 이 화면을 닫지 마세요</b> (새로고침은 괜찮아요).<br>📝 문제: 각자 상·중·하로 풀기 → 완료 인원 확인 → 정답 공개 (🎤 문장은 모둠별 설명자가 자동으로 뽑혀요) → 모둠 안 설명 → 해설 보기<br>👀 확인: 빈칸을 눌러 하나씩 열거나 전체 공개 → 학습지 빨간 펜 수정<br>점수: 상 3·2점, 중 2·1점, 하 1·1점 (한 번에·두 번째)</div>
