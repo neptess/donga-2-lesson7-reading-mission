@@ -96,8 +96,11 @@ mark{background:var(--hl);color:var(--ink);padding:0 3px;border-radius:4px;font-
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:99px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
 .toast.show{opacity:1}
 /* teacher */
-.tgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
-@media (max-width:900px){.tgrid{grid-template-columns:1fr}}
+.tgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,34%);gap:16px;align-items:start}
+/* 오른쪽 모둠별 현황: 화면에 붙어 있고, 이 칸만 따로 스크롤 */
+.side{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.side>.panel{padding:12px}
+@media (max-width:640px){.tgrid{grid-template-columns:1fr}.side{position:static;max-height:none}}
 .proj .en{font-size:clamp(1.3rem,2.4vw,2rem);line-height:1.9}
 .proj .ko{font-size:clamp(1rem,1.6vw,1.3rem)}
 .slot{display:inline-block;min-width:4.5em;border-bottom:3px solid var(--stage);text-align:center;color:var(--stage);font-weight:700}
@@ -115,18 +118,20 @@ mark{background:var(--hl);color:var(--ink);padding:0 3px;border-radius:4px;font-
 .nav button.seen{border-color:var(--stage)}
 .nav .sep{width:100%;font-size:.75rem;color:var(--muted);margin-top:4px}
 .talklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 14px}
-.score{display:flex;flex-direction:column;gap:6px}
-.sc{display:grid;grid-template-columns:4.5em 1fr auto;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.score{display:flex;flex-direction:column;gap:5px}
+.sc .bar{height:4px}
+.sc{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:3px 8px;padding:6px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.sc .st{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.8rem}
 .sc .g{font-weight:600}
-.sc .pts{font-family:var(--f-en);font-weight:700;font-size:1.4rem;text-align:right;font-variant-numeric:tabular-nums}
+.sc .pts{font-family:var(--f-en);font-weight:700;font-size:1.25rem;line-height:1.2;text-align:right;font-variant-numeric:tabular-nums}
 .sc .bs{display:flex;gap:4px;align-items:center}
-.sc .bs button{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:2px 8px;font-size:.85rem}
+.sc .bs button{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:6px;padding:0 7px;font-size:.8rem;line-height:1.7}
 .sc.lead{border-color:var(--gold)}
-.ros{grid-column:1/-1;display:flex;flex-direction:column;gap:2px;font-size:.85rem;border-top:1px dashed var(--line);padding-top:5px;line-height:1.5}
-.ros .rr{display:grid;grid-template-columns:4.6em minmax(0,1fr);gap:6px;align-items:baseline}
+.ros{grid-column:1/-1;display:flex;flex-direction:column;gap:0;font-size:.82rem;border-top:1px dashed var(--line);padding-top:3px;line-height:1.45}
+.ros .rr{display:grid;grid-template-columns:4.4em minmax(0,1fr);gap:6px;align-items:baseline}
 .ros .lt{font-weight:700;white-space:nowrap}
 .ros .lt small{font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums}
-.ros .nm{display:inline-block;margin-right:10px;white-space:nowrap}
+.ros .nm{display:inline-block;margin-right:9px;white-space:nowrap}
 .ros .off{opacity:.45;text-decoration:line-through}
 .ros .empty{color:var(--muted)}
 .bar{height:6px;border-radius:6px;background:var(--line);overflow:hidden}
@@ -138,16 +143,21 @@ input.code4{font-family:var(--f-en);font-size:1.8rem;letter-spacing:.35em;text-a
 /* 교사 화면 오른쪽 위에 늘 떠 있는 입장 QR·코드 (튕긴 학생이 언제든 다시 들어오게) */
 .dock{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px));z-index:25;width:168px;background:#fff;color:#1d2321;border:3px solid var(--stage);border-radius:16px;padding:8px 8px 6px;display:flex;flex-direction:column;align-items:center;gap:0;box-shadow:0 6px 18px rgba(0,0,0,.18);font:inherit;cursor:pointer;line-height:1.25}
 .dock svg{width:146px;height:146px;display:block}
-.dock .dl{font-size:.75rem;color:#5f6a66}
+.dock .dl{font-size:.75rem;color:#5f6a66;white-space:nowrap}
 .dock b{font-family:var(--f-en);font-size:2.1rem;letter-spacing:.14em;font-variant-numeric:tabular-nums}
 .dock .dn{font-size:.75rem;color:#5f6a66}
 .wrap.wide.docked{padding-right:192px}
+@media (max-width:1100px){.dock{width:128px;padding:6px 6px 4px}.dock svg{width:110px;height:110px}.dock b{font-size:1.6rem}.dock .dl{font-size:.66rem}.wrap.wide.docked{padding-right:150px}}
 @media (max-width:700px){.dock{width:108px;padding:5px}.dock svg{width:92px;height:92px}.dock b{font-size:1.3rem}.wrap.wide.docked{padding-right:126px}}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;z-index:30;padding:16px;overflow:auto}
-.qrbig{margin:auto;background:#fff;color:#1d2321;border-radius:18px;padding:18px 22px;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:92vw}
-.qrbig svg{width:min(calc(100vh - 300px),80vw);min-width:200px;height:auto;display:block}
+.qrbig{margin:auto;background:#fff;color:#1d2321;border-radius:18px;padding:18px 26px;display:flex;flex-direction:row;align-items:center;gap:22px;max-width:96vw}
+.qrside{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.qrside .note{color:#5f6a66}
+@media (orientation:portrait){.qrbig{flex-direction:column;gap:8px}}
+.qrbig svg{width:min(calc(100vh - 200px),calc(96vw - 340px));min-width:180px;height:auto;display:block;flex:none}
+@media (orientation:portrait){.qrbig svg{width:min(80vw,calc(100vh - 260px))}}
 .qrbig b{font-family:var(--f-en);font-size:2.6rem;letter-spacing:.25em;line-height:1.1}
-.qrbig span{font-size:.85rem;word-break:break-all;text-align:center}
+.qrbig span{font-size:.85rem;word-break:break-all;text-align:center;max-width:260px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -2885,7 +2895,7 @@ function renderTeacher(){$("#app").className="wrap wide docked";const cname=rs()
   const onIn=g=>membersOf(g).filter(m=>on.has(mkey(m.grp,m.num))).length;
   const cl=R.claims[T.code]||{};
   const status=g=>{const o=onIn(g);if(pg.see)return `${o}명 접속`;const sb=subsOf(g);
-    return `${sb.filter(x=>x.done).length}/${o}명 완료 · ✅${sb.filter(x=>x.ok).length}`};
+    return `${sb.filter(x=>x.done).length}/${o} 완료 · ✅${sb.filter(x=>x.ok).length}`};
   /* 모둠원 이름: 문제 문장에서는 상·중·하별로, 확인 문장에서는 접속한 학생만 */
   const roster=g=>{const mem=membersOf(g).filter(m=>{const k=mkey(m.grp,m.num);return on.has(k)||(!pg.see&&cl[k])}).sort((a,b)=>a.num-b.num);
     if(!mem.length)return "";
@@ -2940,13 +2950,13 @@ function renderTeacher(){$("#app").className="wrap wide docked";const cname=rs()
     ${main}
     <div class="panel stack"><div class="nav">${nav}</div><div class="note">실선 = 📝 문제 문장 · 점선 = 👀 확인 문장 · 🎤 = 설명 문장</div></div>
    </div>
-   <div class="stack">
-    <div class="panel stack"><h3>모둠 점수 <span class="note">(모둠원 평균 + 보너스)</span></h3>
+   <div class="stack side">
+    <div class="panel stack"><h3>모둠별 현황 <span class="note">(점수 = 모둠원 평균 + 보너스)</span></h3>
      <div class="score">${groups.map(g=>{const v=total(g);return `<div class="sc ${v===max&&v>0?"lead":""}"><span class="g">${g}모둠</span>
-       <span class="note">${status(g)}</span>
+       <span class="note st">${status(g)}</span>
        <span class="pts">${v}</span>
+       <span class="bs"><button data-sc="${g}" data-d="1" aria-label="${g}모둠 보너스 1점">+1</button><button data-sc="${g}" data-d="-1" aria-label="${g}모둠 1점 빼기">−1</button></span>
        ${roster(g)}
-       <span class="bs" style="grid-column:1/-1"><span class="note" style="margin-right:auto">보너스</span><button data-sc="${g}" data-d="1">+1</button><button data-sc="${g}" data-d="-1" aria-label="${g}모둠 1점 빼기">−1</button></span>
        <span class="bar" style="grid-column:1/-1"><i style="width:${v/max*100}%"></i></span></div>`}).join("")}</div>
      <button class="btn ghost small" id="t-quota" aria-pressed="${!!T.quota}">모둠 안 수준 나누기: ${T.quota?"켜짐":"꺼짐"}</button>
      <span class="note">${T.quota?"3명 상1·중1·하1 / 4명 상1·중2·하1 / 5명 상1·중2·하2 / 6명 상2·중2·하2 (지금 접속한 인원 기준)":"꺼짐: 자리 수 제한 없이 각자 상·중·하 중 하나를 골라요"}</span>
@@ -2956,7 +2966,7 @@ function renderTeacher(){$("#app").className="wrap wide docked";const cname=rs()
    </div>
   </div>
   <button type="button" class="dock" id="t-qr" aria-label="입장 QR 크게 보기"><span class="dl">QR로 입장 · 누르면 크게</span>${qrSVG(url,3)}<span class="dl">입장 코드</span><b>${esc(T.room||"—")}</b><span class="dn">${hOk?`● ${onAll}명 접속`:"방을 여는 중…"}</span></button>
-  ${qrBig?`<div class="overlay" id="t-ov"><div class="qrbig">${qrSVG(url,10)}<b>${esc(T.room||"")}</b><span>${esc(url)}</span><button class="btn" id="t-ovx">닫기</button></div></div>`:""}`;
+  ${qrBig?`<div class="overlay" id="t-ov"><div class="qrbig">${qrSVG(url,10)}<div class="qrside"><span class="note">입장 코드</span><b>${esc(T.room||"")}</b><span>${esc(url)}</span><button class="btn" id="t-ovx">닫기</button></div></div></div>`:""}`;
   const go=i=>{T.page=i;T.code=seedOf(i);T.reveal=false;T.open={};T.tip=false;T.pick=null;if(!rs().seen.includes(i))rs().seen.push(i);saveT();pushState();render();scrollTo(0,0)};
   $("#t-prev").onclick=()=>go(T.page-1);$("#t-next").onclick=()=>go(T.page+1);
   document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(+b.dataset.go));
