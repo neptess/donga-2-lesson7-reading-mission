@@ -143,10 +143,10 @@ input.code4{font-family:var(--f-en);font-size:1.8rem;letter-spacing:.35em;text-a
 .dock .dn{font-size:.75rem;color:#5f6a66}
 .wrap.wide.docked{padding-right:192px}
 @media (max-width:700px){.dock{width:108px;padding:5px}.dock svg{width:92px;height:92px}.dock b{font-size:1.3rem}.wrap.wide.docked{padding-right:126px}}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
-.qrbig{background:#fff;color:#1d2321;border-radius:18px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:10px;max-width:92vw}
-.qrbig svg{width:min(70vh,80vw);height:auto}
-.qrbig b{font-family:var(--f-en);font-size:3rem;letter-spacing:.25em}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;z-index:30;padding:16px;overflow:auto}
+.qrbig{margin:auto;background:#fff;color:#1d2321;border-radius:18px;padding:18px 22px;display:flex;flex-direction:column;align-items:center;gap:6px;max-width:92vw}
+.qrbig svg{width:min(calc(100vh - 300px),80vw);min-width:200px;height:auto;display:block}
+.qrbig b{font-family:var(--f-en);font-size:2.6rem;letter-spacing:.25em;line-height:1.1}
 .qrbig span{font-size:.85rem;word-break:break-all;text-align:center}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
